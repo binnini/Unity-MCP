@@ -172,6 +172,37 @@ The external runner may keep its own local directories such as:
 
 These remain companion-owned local state only. Companion `outbox/` is not a Unity-MCP queue; `.unity-mcp/handoff-spool/windows-evidence/` remains the only repo-owned evidence spool.
 
+## Artifact ownership and retention
+
+Treat artifact locations by ownership first, not by whether a single validation run happened to create them.
+
+### Authoritative repo-owned state under `<projectPath>/.unity-mcp/`
+
+These paths are part of Unity-MCP's project-local state model and must not be treated as disposable generic proof output:
+
+- `<projectPath>/.unity-mcp/handoff-ledger/` — canonical leader-owned handoff records
+- `<projectPath>/.unity-mcp/handoff-spool/windows-evidence/` — bounded Windows evidence queue awaiting or recording reconcile
+- `<projectPath>/.unity-mcp/team-state/` — project-local team runtime/session state
+
+This state may also be useful as validation evidence, but its primary role is authoritative lifecycle/runtime storage.
+
+### Companion-local reproducibility artifacts
+
+These paths stay outside Unity-MCP ownership and are primarily local run aids:
+
+- `logs/` — runner transcript and command output
+- `outbox/` — generated evidence envelopes, summaries, optional screenshots before submit
+- `snapshots/` — cached passive snapshots for replay/debugging
+- optional `sessions/` — external session-manager bookkeeping
+
+These artifacts are useful for debugging and replay, but they are not canonical Unity-MCP state and should not be described as repo-owned queues or ledgers.
+
+### Retention rule of thumb
+
+- preserve authoritative `<projectPath>/.unity-mcp/...` state according to Unity-MCP lifecycle needs
+- keep companion-local logs/outbox/snapshots only as long as operators need them for replay or debugging
+- commit proof artifacts only when they are intentionally curated as fixtures or explicit verification evidence, not as default runtime residue
+
 ## Spool layout
 
 The Windows lane writes only to the bounded evidence spool:

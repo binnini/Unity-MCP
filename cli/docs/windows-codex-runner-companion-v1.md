@@ -102,6 +102,29 @@ These are **external companion state only**.
 
 Companion `outbox/` is **not** Unity-MCP's queue. Unity-MCP's only repo-owned evidence queue remains `.unity-mcp/handoff-spool/windows-evidence/`.
 
+## Artifact classification and retention
+
+Use this ownership split when deciding what to preserve, inspect, or commit after a run.
+
+### Authoritative Unity-MCP state
+
+Under `<projectPath>/.unity-mcp/`, these paths remain repo-owned state rather than generic proof artifacts:
+
+- `handoff-ledger/` — canonical leader-owned handoff records
+- `handoff-spool/windows-evidence/` — bounded evidence spool for later leader reconcile
+- `team-state/` — project-local team runtime/session state
+
+Do not describe these as disposable companion leftovers just because a validation run touched them.
+
+### Companion-local transient or reproducibility artifacts
+
+The companion-local `logs/`, `outbox/`, `snapshots/`, and optional `sessions/` directories are external runtime artifacts.
+
+- keep them deterministic and easy to inspect
+- retain them long enough for replay/debugging
+- avoid treating them as repo-owned queues or ledgers
+- do not commit them by default unless they are being intentionally curated as fixtures or explicit verification proof
+
 ## Evidence handoff rules
 
 - Keep `handoffId` and handoff version aligned with the passive snapshot.

@@ -22,6 +22,11 @@ describe('windows codex lane starter artifacts', () => {
     expect(content).toContain('windows_validation_smoke_v1');
     expect(content).toContain('The runner stops here. It does **not** poll Unity-MCP with `list-windows-evidence`');
     expect(content).toContain('Companion `outbox/` is not a Unity-MCP queue');
+    expect(content).toContain('Artifact ownership and retention');
+    expect(content).toContain('<projectPath>/.unity-mcp/handoff-ledger/');
+    expect(content).toContain('<projectPath>/.unity-mcp/handoff-spool/windows-evidence/');
+    expect(content).toContain('<projectPath>/.unity-mcp/team-state/');
+    expect(content).toContain('commit proof artifacts only when they are intentionally curated as fixtures or explicit verification evidence');
     expect(content).not.toContain('handoff assignment artifact');
   });
 
@@ -33,6 +38,9 @@ describe('windows codex lane starter artifacts', () => {
     expect(content).toContain('running the `windows_validation_smoke_v1` validation recipe');
     expect(content).toContain('stopping after submit and waiting for the mac leader to reconcile or request another run');
     expect(content).toContain('Companion `outbox/` is **not** Unity-MCP\'s queue.');
+    expect(content).toContain('Artifact classification and retention');
+    expect(content).toContain('Under `<projectPath>/.unity-mcp/`, these paths remain repo-owned state');
+    expect(content).toContain('do not commit them by default unless they are being intentionally curated as fixtures or explicit verification proof');
     expect(content).toContain('Do **not** call `handoff list-windows-evidence` as a runner polling loop.');
     expect(content).toContain('Windows validation hardening / version-matched fixture policy');
     expect(content).toContain('broader implementation-lane execution beyond validation-first smoke');

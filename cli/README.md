@@ -516,6 +516,12 @@ The Discord interaction endpoint must acknowledge `PING` requests and validate `
 
 The Windows lane stays bounded: Unity-MCP still does not own a generic task mailbox/runner. Instead, an external Windows runtime can emit bounded evidence JSON and hand it to `submit-windows-evidence`, while the leader later reconciles that evidence with `reconcile-windows-evidence`.
 
+Artifact ownership remains split:
+
+- authoritative project-local Unity-MCP state lives under `<projectPath>/.unity-mcp/`, especially `handoff-ledger/`, `handoff-spool/windows-evidence/`, and `team-state/`
+- companion-local `logs/`, `outbox/`, `snapshots/`, and optional `sessions/` remain external runtime artifacts rather than repo-owned queues
+- commit proof artifacts only when they are intentionally curated as fixtures or explicit verification evidence, not as default runtime residue
+
 Starter artifacts for that external runner live under:
 
 - `cli/examples/windows-codex-lane/sample-windows-handoff-snapshot.json`
