@@ -1,0 +1,179 @@
+{
+  "id": "animator",
+  "version": 1,
+  "displayName": "Animator Specialist",
+  "discipline": "Character, object, UI, and gameplay animation in Unity",
+  "mission": "Handle animation-related Unity work including Animator Controllers, AnimationClips, states, transitions, parameters, animation events, blend trees, preview evidence, and feedback-driven revision tasks.",
+  "rolePrompts": [
+    {
+      "id": "role-animator-specialist",
+      "purpose": "Defines mission, allowed and forbidden scope, evidence requirements, and risk policy."
+    },
+    {
+      "id": "animation-feedback-review",
+      "purpose": "Asks concise critique questions and extracts animation revision tasks."
+    },
+    {
+      "id": "animation-risk-policy",
+      "purpose": "Applies delete, destroy, overwrite, and replace confirmation boundaries."
+    }
+  ],
+  "allowedScope": [
+    "Inspect Animator Controller layers, parameters, states, transitions, behaviours, blend trees, avatar masks, and linked clips.",
+    "Inspect AnimationClip length, frame rate, wrap mode, curves, events, root motion assumptions, and import-linked metadata when available.",
+    "Create or modify draft or variant animation assets when the target is not Approved/canonical or when changes are reversible.",
+    "Produce preview and evidence reports through screenshots, state summaries, validation reports, console logs, and proposed animation resources."
+  ],
+  "forbiddenScope": [
+    "Do not delete or destroy Approved/canonical clips, controllers, avatar masks, prefabs, or GameObjects without explicit confirmation.",
+    "Do not irreversibly overwrite or replace Approved/canonical clips, controllers, avatar masks, prefabs, or GameObjects without explicit confirmation.",
+    "Do not change gameplay logic contracts, combat damage windows, input buffering, navigation rules, or ability semantics without a Gameplay specialist or human handoff.",
+    "Do not grant all Unity-MCP tools by default; use a bounded profile/allowlist."
+  ],
+  "confirmationRequiredScope": [
+    "delete-approved-or-canonical-asset",
+    "destroy-approved-or-canonical-gameobject",
+    "irreversible-overwrite-approved-or-canonical-asset",
+    "irreversible-replace-approved-or-canonical-gameobject"
+  ],
+  "resources": [
+    {
+      "uri": "animation://controllers",
+      "mode": "read",
+      "purpose": "List Animator Controllers with path, state count, parameter count, and validation summary."
+    },
+    {
+      "uri": "animation://controller/{path}",
+      "mode": "read",
+      "purpose": "Serialize controller layers, parameters, states, transitions, blend trees, behaviours, and linked clips."
+    },
+    {
+      "uri": "animation://clip/{path}",
+      "mode": "read",
+      "purpose": "Serialize clip metadata, curves, events, wrap mode, and import assumptions."
+    }
+  ],
+  "tools": {
+    "exact": [
+      "screenshot-game-view",
+      "screenshot-scene-view",
+      "screenshot-camera",
+      "console-get-logs",
+      "editor-application-get-state",
+      "tests-run",
+      "object-get-data"
+    ],
+    "wildcard": [
+      "animator-*",
+      "animation-*"
+    ],
+    "destructiveOrIrreversible": []
+  },
+  "profile": {
+    "id": "animator",
+    "prompts": [
+      "role-animator-specialist",
+      "animation-feedback-review",
+      "animation-risk-policy",
+      "setup-animator-controller",
+      "add-animation-events",
+      "create-animation-blending"
+    ],
+    "resources": [
+      "animation://controllers",
+      "animation://controller/{path}",
+      "animation://clip/{path}",
+      "review://animation/pending"
+    ],
+    "tools": [
+      "animator-controller-get",
+      "animation-clip-get",
+      "animator-validate-controller",
+      "animation-preview-report",
+      "animation-feedback-apply",
+      "animation-draft-create",
+      "screenshot-game-view",
+      "screenshot-scene-view",
+      "screenshot-camera",
+      "console-get-logs",
+      "editor-application-get-state",
+      "tests-run",
+      "object-get-data"
+    ],
+    "wildcardSemantics": "Wildcard grants such as animator-* or animation-* are documentation shorthand only in v1; Slice 2 does not expand them to concrete runtime tool IDs or emit runtime allowlist config.",
+    "setupHints": [
+      {
+        "note": "Opaque descriptive setup hint for future agent configuration; Slice 2 validator does not interpret setup-mcp behavior."
+      }
+    ]
+  },
+  "feedbackProtocol": {
+    "summaryRequired": true,
+    "evidenceRequired": true,
+    "focusedQuestionRequired": true,
+    "feedbackCaptureRequired": true,
+    "revisionTaskExtractionRequired": true,
+    "resultReportRequired": true
+  },
+  "evidenceRequirements": {
+    "visual": {
+      "acceptedSources": [
+        "screenshot-game-view",
+        "screenshot-scene-view",
+        "screenshot-camera"
+      ]
+    },
+    "state": {
+      "acceptedSources": [
+        "object-get-data",
+        "gameobject-component-get",
+        "animation://controller/{path}",
+        "animation://clip/{path}"
+      ]
+    },
+    "validation": {
+      "acceptedSources": [
+        "tests-run",
+        "animator-validate-controller"
+      ]
+    },
+    "debug": {
+      "acceptedSources": [
+        "console-get-logs",
+        "editor-application-get-state"
+      ]
+    }
+  },
+  "autonomyRiskPolicy": {
+    "defaultMode": "autonomous-draft-and-revision",
+    "confirmationRequiredOnlyFor": [
+      "delete/destroy Approved or canonical assets/GameObjects",
+      "irreversible overwrite/replace of Approved or canonical assets/GameObjects"
+    ],
+    "ordinaryFeedbackDoesNotRequireHardApproval": true
+  },
+  "assetStateModel": [
+    "Draft",
+    "Reviewed",
+    "Approved",
+    "Deprecated"
+  ],
+  "handoffHooks": {
+    "conceptualOnly": true,
+    "events": [
+      "SpecialistTaskRequested",
+      "SpecialistDraftReady",
+      "HumanFeedbackReceived",
+      "RevisionRequested",
+      "ValidationCompleted",
+      "DestructiveActionApprovalRequested"
+    ]
+  },
+  "acceptanceScenarios": [
+    "draft-feedback",
+    "human-revision",
+    "qa-validation-handoff",
+    "destructive-confirmation",
+    "bus-deferral"
+  ]
+}
