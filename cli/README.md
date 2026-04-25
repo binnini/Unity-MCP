@@ -476,14 +476,11 @@ unity-mcp-cli handoff publish-discord-status verification-handoff-1 ./MyGame --s
 
 ### `handoff serve`
 
-Run the local HTTP bridge that exposes `/healthz` and `/discord/interactions` for a public tunnel or reverse proxy. `/healthz` now reports `capabilityStatus` so operators can see whether Discord notifications and signed interactions are actually ready before exposing the endpoint.
+Run the local HTTP bridge that exposes `/healthz` and `/discord/interactions` for a public tunnel or reverse proxy.
 
 ```bash
 unity-mcp-cli handoff serve ./MyGame --env-file .unity-mcp/handoff.env --port 8787
-curl http://127.0.0.1:8787/healthz
 ```
-
-If `UNITY_MCP_HANDOFF_DISCORD_PUBLIC_KEY` is missing, the bridge still starts for local inspection but reports `capabilityStatus.discordInteractionsReady=false`, warns in CLI output, and returns a configuration error from `POST /discord/interactions` instead of pretending the approval path is ready.
 
 ### `handoff dispatch-approved`
 

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import * as ui from '../../utils/ui.js';
-import { getHandoffBridgeCapabilityStatus, loadHandoffBridgeConfig } from '../../utils/discord-approval.js';
+import { loadHandoffBridgeConfig } from '../../utils/discord-approval.js';
 import { startHandoffServer } from '../../utils/handoff-server.js';
 import { resolveHandoffProjectPath } from './helpers.js';
 
@@ -41,17 +41,8 @@ export function createHandoffServeCommand(): Command {
         if (config.envFilePath) {
           ui.label('Env file', config.envFilePath);
         }
-        const capabilityStatus = getHandoffBridgeCapabilityStatus(config);
-        ui.label('Discord notify ready', capabilityStatus.discordNotificationsReady ? 'yes' : 'no');
-        ui.label('Discord interactions ready', capabilityStatus.discordInteractionsReady ? 'yes' : 'no');
         ui.divider();
         ui.success('Leader-hosted handoff bridge is listening. Press Ctrl+C to stop.');
-        if (!capabilityStatus.discordInteractionsReady) {
-          ui.warn('Discord interaction verification is not ready: set UNITY_MCP_HANDOFF_DISCORD_PUBLIC_KEY before exposing /discord/interactions.');
-        }
-        if (!capabilityStatus.discordNotificationsReady) {
-          ui.warn('Discord notification publishing is not ready: set UNITY_MCP_HANDOFF_DISCORD_BOT_TOKEN and UNITY_MCP_HANDOFF_DISCORD_APPROVAL_CHANNEL_ID before notify/publish-discord-status.');
-        }
 
         const shutdown = () => {
           server.close(() => process.exit(0));

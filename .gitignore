@@ -13,6 +13,7 @@
 commands/TestResults
 commands/.env
 !commands/.env.example
+Unity-MCP-Plugin/.unity-mcp/handoff.env
 
 # Unity package lock files (auto-generated)
 **/Packages/packages-lock.json

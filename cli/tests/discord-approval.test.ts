@@ -9,7 +9,6 @@ import {
   createDiscordEphemeralResponse,
   createDiscordUpdateResponse,
   getDiscordApprovalDecision,
-  getHandoffBridgeCapabilityStatus,
   loadHandoffBridgeConfig,
   parseEnvFileContents,
   sendDiscordApprovalNotification,
@@ -32,28 +31,6 @@ describe('discord handoff approval helpers', () => {
     expect(parseEnvFileContents('A=1\n# comment\nB = "two"\n')).toEqual({ A: '1', B: 'two' });
     expect(config.discordBotToken).toBe('env-bot-token');
     expect(config.handoffAllowedApproverIds).toEqual(['123', '456']);
-  });
-
-
-  it('reports bridge capability readiness from env-backed config', () => {
-    expect(getHandoffBridgeCapabilityStatus({
-      discordBotToken: 'bot-token',
-      discordApprovalChannelId: 'channel-1',
-      discordPublicKey: 'public-key',
-      handoffLeaderActor: 'leader',
-      handoffAllowedApproverIds: [],
-    })).toEqual({
-      discordNotificationsReady: true,
-      discordInteractionsReady: true,
-    });
-
-    expect(getHandoffBridgeCapabilityStatus({
-      handoffLeaderActor: 'leader',
-      handoffAllowedApproverIds: [],
-    })).toEqual({
-      discordNotificationsReady: false,
-      discordInteractionsReady: false,
-    });
   });
 
   it('builds a bounded Discord approval message with approve/reject controls', () => {

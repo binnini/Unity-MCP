@@ -160,18 +160,6 @@ export function assertDiscordNotifyConfig(config: HandoffBridgeConfig): Required
   };
 }
 
-export interface HandoffBridgeCapabilityStatus {
-  discordNotificationsReady: boolean;
-  discordInteractionsReady: boolean;
-}
-
-export function getHandoffBridgeCapabilityStatus(config: HandoffBridgeConfig): HandoffBridgeCapabilityStatus {
-  return {
-    discordNotificationsReady: Boolean(config.discordBotToken?.trim() && config.discordApprovalChannelId?.trim()),
-    discordInteractionsReady: Boolean(config.discordPublicKey?.trim()),
-  };
-}
-
 export function assertDiscordServeConfig(config: HandoffBridgeConfig): Required<Pick<HandoffBridgeConfig, 'discordPublicKey'>> {
   if (!config.discordPublicKey?.trim()) {
     throw new DiscordApprovalError('Missing UNITY_MCP_HANDOFF_DISCORD_PUBLIC_KEY for Discord interaction verification.');

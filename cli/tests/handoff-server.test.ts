@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createDiscordNotificationSpoolSnapshot, createHealthResponse, handleDiscordInteractionRequest } from '../src/utils/handoff-server.js';
+import { createDiscordNotificationSpoolSnapshot, handleDiscordInteractionRequest } from '../src/utils/handoff-server.js';
 import { createHandoffRecord, createLeaderWriter, readHandoffRecord, transitionHandoffState, writeHandoffRecord } from '../src/utils/handoff-ledger.js';
 
 const tempDirs: string[] = [];
@@ -31,44 +31,6 @@ afterEach(() => {
 });
 
 describe('handoff bridge Discord interaction ingestion', () => {
-
-  it('reports readiness in the health payload', () => {
-    const response = createHealthResponse({
-      discordBotToken: 'bot-token',
-      discordApprovalChannelId: 'channel-1',
-      handoffLeaderActor: 'mac-omx-leader',
-      handoffAllowedApproverIds: [],
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({
-      ok: true,
-      service: 'unity-mcp-handoff-bridge',
-      capabilityStatus: {
-        discordNotificationsReady: true,
-        discordInteractionsReady: false,
-      },
-    });
-  });
-
-  it('returns service unavailable when Discord interaction verification is not configured', () => {
-    const response = handleDiscordInteractionRequest({
-      projectPath: makeProject(),
-      config: {
-        handoffLeaderActor: 'mac-omx-leader',
-        handoffAllowedApproverIds: [],
-      },
-      rawBody: JSON.stringify({ type: 1 }),
-      signature: undefined,
-      timestamp: undefined,
-    });
-
-    expect(response.statusCode).toBe(503);
-    expect(JSON.parse(response.body)).toEqual({
-      error: 'Missing UNITY_MCP_HANDOFF_DISCORD_PUBLIC_KEY for Discord interaction verification.',
-    });
-  });
-
   it('acknowledges Discord pings', () => {
     const body = JSON.stringify({ type: 1 });
     const signed = signBody(body);
