@@ -69,6 +69,60 @@ function Get-SanitizedSessionName([string]$Value) {
   return $sanitized
 }
 
+function Get-UnityProjectVersion([string]$ProjectPathValue) {
+  $projectVersionPath = Join-Path $ProjectPathValue 'ProjectSettings\ProjectVersion.txt'
+  if (-not (Test-Path -LiteralPath $projectVersionPath)) {
+    throw "Unity project version file not found: $projectVersionPath"
+  }
+
+  $match = Select-String -Path $projectVersionPath -Pattern '^m_EditorVersion:\s*(.+)$'
+  if ($null -eq $match -or [string]::IsNullOrWhiteSpace($match.Matches[0].Groups[1].Value)) {
+    throw "Unity project version could not be determined from $projectVersionPath"
+  }
+
+  return $match.Matches[0].Groups[1].Value.Trim()
+}
+
+function Get-UnityVersionTrack([string]$VersionValue) {
+  $match = [Regex]::Match($VersionValue, '^(\d+\.\d+)')
+  if (-not $match.Success) {
+    throw "Unity version track could not be derived from '$VersionValue'"
+  }
+
+  return $match.Groups[1].Value
+}
+
+function Find-InstalledUnityEditor([string]$RequiredVersion) {
+  $editorRoot = 'C:\Program Files\Unity\Hub\Editor'
+  if (-not (Test-Path -LiteralPath $editorRoot)) {
+    throw "Unity Hub editor root not found: $editorRoot"
+  }
+
+  $requiredTrack = Get-UnityVersionTrack $RequiredVersion
+  $candidates = Get-ChildItem -LiteralPath $editorRoot -Directory | ForEach-Object {
+    $unityExePath = Join-Path $_.FullName 'Editor\Unity.exe'
+    if (Test-Path -LiteralPath $unityExePath) {
+      [PSCustomObject]@{
+        Version = $_.Name
+        Track = Get-UnityVersionTrack $_.Name
+        UnityExePath = $unityExePath
+      }
+    }
+  }
+
+  $exactMatch = $candidates | Where-Object { $_.Version -eq $RequiredVersion } | Select-Object -First 1
+  if ($null -ne $exactMatch) {
+    return $exactMatch
+  }
+
+  $trackMatch = $candidates | Where-Object { $_.Track -eq $requiredTrack } | Sort-Object Version -Descending | Select-Object -First 1
+  if ($null -ne $trackMatch) {
+    return $trackMatch
+  }
+
+  throw "No installed Unity editor matched required version '$RequiredVersion' or version track '$requiredTrack'."
+}
+
 function Write-RunnerLog([string]$Message) {
   $timestamp = [DateTimeOffset]::UtcNow.ToString('o')
   $line = "[$timestamp] $Message"
@@ -318,7 +372,10 @@ try {
         throw 'Optional Unity validation requested, but UnityProjectPath is unavailable.'
       }
 
-      Write-RunnerLog "Optional Unity validation is environment-dependent. Validate against $UnityProjectPath and capture logs/screenshots as bounded refs."
+      $unityProjectVersion = Get-UnityProjectVersion $UnityProjectPath
+      $matchedEditor = Find-InstalledUnityEditor $unityProjectVersion
+      Write-RunnerLog "Optional Unity validation preconditions satisfied: projectVersion=$unityProjectVersion editorVersion=$($matchedEditor.Version) editorPath=$($matchedEditor.UnityExePath)"
+      Write-RunnerLog "Optional Unity validation remains bounded in v1. No polling/reconcile is added; capture only bounded refs if deeper Unity-side checks are performed."
     } -Required:$false))
   }
 }
