@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "windows_lane_evidence_envelope",
+  "recordId": "cab288c615a3986a4f01d5cb201a7848c0991b8c1335631db639716b33297ba4",
+  "handoffId": "windows-validation-p0-2-20260425t012603z",
+  "handoffVersion": 1,
+  "sourceLaneId": "windows-runner-1",
+  "outcome": "passed",
+  "summary": "Windows validation smoke completed.",
+  "submittedAt": "2026-04-25T02:08:31.6069450+00:00",
+  "storedAt": "2026-04-25T02:08:31.787Z",
+  "consumedAt": null,
+  "appliedRecordVersion": null,
+  "lastError": null,
+  "envelope": {
+    "schemaVersion": 1,
+    "kind": "windows_lane_evidence_envelope",
+    "handoffId": "windows-validation-p0-2-20260425t012603z",
+    "handoffVersion": 1,
+    "sourceLane": {
+      "kind": "windows_codex",
+      "laneId": "windows-runner-1"
+    },
+    "submittedAt": "2026-04-25T02:08:31.6069450+00:00",
+    "outcome": "passed",
+    "summary": "Windows validation smoke completed.",
+    "evidenceRefs": [
+      {
+        "type": "log",
+        "uri": "file:///C:/unity-mcp-agent/logs/windows-validation-p0-2-20260425t012603z-20260425T020818Z-runner.log"
+      },
+      {
+        "type": "note",
+        "uri": "file:///C:/unity-mcp-agent/outbox/windows-validation-p0-2-20260425t012603z-20260425T020818Z-summary.md"
+      }
+    ]
+  }
+}
