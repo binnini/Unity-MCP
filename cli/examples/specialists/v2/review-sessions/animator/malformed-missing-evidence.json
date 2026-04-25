@@ -1,0 +1,14 @@
+{
+  "sessionId": "malformed-missing-evidence",
+  "specialistId": "animator",
+  "status": "awaiting-feedback",
+  "targetRefs": [
+    "animation://clip/Assets%2FCharacters%2FHero%2FAttack.anim"
+  ],
+  "intentRestatement": "Broken sample artifact for malformed filtering tests.",
+  "summary": "This file intentionally omits evidence to verify malformed artifact filtering.",
+  "evidence": [],
+  "focusedQuestion": "Should this malformed artifact ever appear in the pending projection?",
+  "riskNote": "Test-only malformed fixture.",
+  "updatedAt": "2026-04-25T12:20:00Z"
+}

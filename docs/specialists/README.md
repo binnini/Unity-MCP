@@ -24,6 +24,9 @@ and MCP client configuration.
 | [`specialist-selection-guide-v2.md`](specialist-selection-guide-v2.md) | Selection/routing rules for the first-wave specialist roster. |
 | [`first-wave-catalog-v2.md`](first-wave-catalog-v2.md) | Truthful first-wave roster status: grounded vs guide-level vs deferred. |
 | [`prompt-architecture-v2.md`](prompt-architecture-v2.md) | Guide/output/persona layering and prompt-pack fixture rules for chat + MCP usage. |
+| [`specialist-injection-policy-v2.md`](specialist-injection-policy-v2.md) | Canonical v2 policy for when/how specialist layers may be injected across chat, MCP, and review follow-up flows. |
+| [`mcp-usage-guide-execution-rules-v2.md`](mcp-usage-guide-execution-rules-v2.md) | Canonical v2 rules for how grounded vs guide-level vs deferred specialists may execute MCP evidence gathering. |
+| [`promotion-criteria-v2.md`](promotion-criteria-v2.md) | Truthfulness-safe criteria for promoting UI/Sound/Gameplay beyond their current first-slice status. |
 | [`first-wave-prompts-v2.md`](first-wave-prompts-v2.md) | Prompt-pack rollout status for Animator, UI, Sound, and Gameplay. |
 | `cli/examples/specialists/v2/first-wave-prompt-registry.v2.json` | Internal registry linking first-wave prompt packs to specialist docs/runtime status. |
 | [`ui-specialist-v2.md`](ui-specialist-v2.md) | Guide-level UI specialist definition and prompt-pack linkage. |

@@ -1,0 +1,25 @@
+{
+  "sessionId": "animator-review-001",
+  "specialistId": "animator",
+  "status": "awaiting-feedback",
+  "targetRefs": [
+    "animation://clip/Assets%2FCharacters%2FHero%2FAttack.anim"
+  ],
+  "intentRestatement": "You want the attack windup to read faster without changing the approved hit event target.",
+  "summary": "Prepared a draft review context anchored to the current attack clip timing.",
+  "evidence": [
+    {
+      "category": "state",
+      "source": "animation://clip/Assets%2FCharacters%2FHero%2FAttack.anim",
+      "summary": "Clip length is 0.42s with the hit event landing at 0.31s."
+    },
+    {
+      "category": "visual",
+      "source": "screenshot-game-view",
+      "summary": "The anticipation reads long before the impact pose resolves."
+    }
+  ],
+  "focusedQuestion": "Should the windup feel shorter, heavier, or unchanged?",
+  "riskNote": "No destructive overwrite is proposed at review time.",
+  "updatedAt": "2026-04-25T12:00:00Z"
+}

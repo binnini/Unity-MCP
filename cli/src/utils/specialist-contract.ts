@@ -57,6 +57,13 @@ const REQUIRED_FEEDBACK_FLAGS = [
 ] as const;
 
 const REQUIRED_EVIDENCE_CATEGORIES = ['visual', 'state', 'validation', 'debug'] as const;
+export const ALLOWED_ANIMATOR_REVIEW_SESSION_STATUSES = [
+  'draft',
+  'awaiting-feedback',
+  'revision-ready',
+  'validation-ready',
+  'blocked-on-confirmation',
+] as const;
 const UNBOUNDED_TOOL_GRANTS = new Set(['*', 'all', 'all-tools']);
 const EXECUTABLE_BUS_KEYS = new Set([
   'bus',
@@ -523,6 +530,20 @@ export function validateAnimatorReviewSessionArtifact(input: unknown): AnimatorR
     if (!isNonEmptyString(input[field])) {
       addReviewSessionError(errors, 'MISSING_REVIEW_SESSION_FIELD', field, `${field} must be a non-empty string.`);
     }
+  }
+
+  if (
+    isNonEmptyString(input.status) &&
+    !ALLOWED_ANIMATOR_REVIEW_SESSION_STATUSES.includes(
+      input.status as (typeof ALLOWED_ANIMATOR_REVIEW_SESSION_STATUSES)[number]
+    )
+  ) {
+    addReviewSessionError(
+      errors,
+      'INVALID_REVIEW_SESSION_STATUS',
+      'status',
+      `status must be one of: ${ALLOWED_ANIMATOR_REVIEW_SESSION_STATUSES.join(', ')}.`
+    );
   }
 
   if ('sessionId' in input && !isSafeReviewSessionId(input.sessionId)) {

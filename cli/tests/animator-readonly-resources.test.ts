@@ -189,6 +189,17 @@ describe('Animator read-only resources static contract', () => {
     expect(source).toContain('ValidateReviewSessionPayload');
     expect(source).toContain("specialistId 'animator'");
     expect(source).toContain('AllowedReviewEvidenceCategories');
+    expect(source).toContain('AllowedReviewSessionStatuses');
+    for (const status of [
+      'draft',
+      'awaiting-feedback',
+      'revision-ready',
+      'validation-ready',
+      'blocked-on-confirmation',
+    ]) {
+      expect(source).toContain(`"${status}"`);
+    }
+    expect(source).toContain('canonical first-slice status');
     expect(source).toContain("char.IsLetterOrDigit(ch) || ch == '.' || ch == '_' || ch == '-'");
   });
 });

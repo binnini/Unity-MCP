@@ -1,0 +1,34 @@
+{
+  "sessionId": "animator-review-002",
+  "specialistId": "animator",
+  "status": "revision-ready",
+  "targetRefs": [
+    "animation://controller/Assets%2FCharacters%2FHero.controller"
+  ],
+  "intentRestatement": "Reduce visible foot sliding in the stop transition while keeping the approved controller path.",
+  "summary": "Feedback has been captured and converted into bounded controller revision tasks.",
+  "evidence": [
+    {
+      "category": "visual",
+      "source": "screenshot-game-view",
+      "summary": "Foot sliding is visible on the stop transition around frame 12."
+    },
+    {
+      "category": "state",
+      "source": "animation://controller/Assets%2FCharacters%2FHero.controller",
+      "summary": "The stop transition duration is longer than the desired foot plant timing."
+    }
+  ],
+  "focusedQuestion": "Should the stop transition be shortened without changing the clip set?",
+  "riskNote": "Requires confirmation before overwriting an approved controller asset.",
+  "updatedAt": "2026-04-25T12:10:00Z",
+  "feedbackCaptured": "Please tighten the stop transition and keep the same clip set.",
+  "revisionTasks": [
+    {
+      "id": "rev-1",
+      "targetRef": "animation://controller/Assets%2FCharacters%2FHero.controller",
+      "action": "Shorten the stop transition duration while preserving the existing clip assignments.",
+      "acceptance": "Visible foot sliding is reduced without changing the approved controller path or clip set."
+    }
+  ]
+}

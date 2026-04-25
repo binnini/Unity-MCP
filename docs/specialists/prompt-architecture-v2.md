@@ -111,6 +111,44 @@ When a specialist is selected for MCP resource/tool work:
 - preserve the output contract when reporting findings,
 - do not use persona language to widen scope.
 
+The canonical execution rules for that guidance are:
+- `docs/specialists/mcp-usage-guide-execution-rules-v2.md`
+
+## Prompt-pack consumer semantics
+
+The v2 prompt-pack consumer is responsible for turning the fixture into ordered runtime instructions without inventing new ownership claims.
+
+The canonical injection gate for those instructions is:
+- `docs/specialists/specialist-injection-policy-v2.md`
+
+### Chat session consumption
+For chat injection:
+1. render the **selection guide** first,
+2. bind the **output contract** second,
+3. append the **persona prompt** last when present.
+
+This produces one ordered prompt surface where earlier layers remain authoritative.
+
+### MCP resource/tool consumption
+For MCP-oriented usage:
+- classify `preferredEvidence` into:
+  - runtime-backed resources,
+  - runtime-backed tools,
+  - external/manual evidence;
+- consume runtime-backed entries first when they exist;
+- keep non-runtime entries as fallback evidence guidance;
+- if the needed evidence falls outside the current specialist lane, use `handoffTo` instead of widening scope.
+
+### Handoff rule
+`handoffTo` is consumed as the explicit adjacent-owner list.
+
+It is used when:
+- the request matches an `avoidWhen` condition,
+- the preferred evidence needed is outside the current specialist's truthful runtime boundary,
+- or the current specialist can only provide guide-level/deferred framing for the next step.
+
+In all such cases, the consumer must recommend one of the listed handoff targets rather than fabricating new runtime support.
+
 ## First-wave expectation
 
 The first-wave prompt packs are:

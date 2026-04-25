@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import {
+  ALLOWED_ANIMATOR_REVIEW_SESSION_STATUSES,
   CANONICAL_SPECIALIST_CONFIRMATION_TOKENS,
   validateAnimatorReviewSessionArtifact,
   validateSpecialistContract,
@@ -266,6 +267,22 @@ describe('animator review session artifact validator', () => {
 
   it('accepts a minimal evidence-linked animator review session artifact', () => {
     expect(validateAnimatorReviewSessionArtifact(validReviewSession())).toEqual({ valid: true, errors: [] });
+  });
+
+  it('accepts only the canonical first-slice review-session statuses', () => {
+    for (const status of ALLOWED_ANIMATOR_REVIEW_SESSION_STATUSES) {
+      const fixture = validReviewSession();
+      fixture.status = status;
+      expect(validateAnimatorReviewSessionArtifact(fixture)).toEqual({ valid: true, errors: [] });
+    }
+
+    const invalid = validReviewSession();
+    invalid.status = 'queued';
+    const result = validateAnimatorReviewSessionArtifact(invalid);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_REVIEW_SESSION_STATUS', path: 'status' })
+    );
   });
 
   it('requires canonical animator review session fields', () => {

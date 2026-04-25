@@ -165,6 +165,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             "debug"
         };
 
+        static readonly HashSet<string> AllowedReviewSessionStatuses = new(StringComparer.Ordinal)
+        {
+            "draft",
+            "awaiting-feedback",
+            "revision-ready",
+            "validation-ready",
+            "blocked-on-confirmation"
+        };
+
         static readonly JsonSerializerOptions JsonOptions = new()
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.Never,
@@ -544,7 +553,6 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
 
             foreach (var value in new[]
             {
-                payload.Status,
                 payload.IntentRestatement,
                 payload.Summary,
                 payload.FocusedQuestion,
@@ -557,6 +565,12 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                     errorMessage = "Animator review session artifacts must keep all required non-empty summary fields.";
                     return false;
                 }
+            }
+
+            if (string.IsNullOrWhiteSpace(payload.Status) || !AllowedReviewSessionStatuses.Contains(payload.Status))
+            {
+                errorMessage = "Animator review session artifacts must use a canonical first-slice status.";
+                return false;
             }
 
             if (payload.TargetRefs == null || payload.TargetRefs.Length == 0 || payload.TargetRefs.Any(string.IsNullOrWhiteSpace))

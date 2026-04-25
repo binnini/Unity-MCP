@@ -25,6 +25,7 @@ This slice is intentionally narrow:
 | Internal validation | `cli/src/utils/specialist-contract.ts` + `cli/tests/*` | Internal-only utility/test enforcement. |
 | Animator runtime resource projection | `Unity-MCP-Plugin/Packages/com.ivanmurzak.unity.mcp/Editor/Scripts/API/Resource/Animation.cs` | Canonical read-only Animator resource behavior. |
 | Review-session artifact persistence | `.omx/state/specialists/review-sessions/animator/{sessionId}.json` | OMX companion-owned artifact, not Unity lifecycle authority. |
+| Review-session artifact producer | OMX companion-side review producer | Host/chat-side creator/updater of the artifact; not Unity, not bus-owned, not public CLI surface. |
 | Review-session resource route | `review://animation/session/{sessionId}` | Read-only projection over existing companion artifact only. |
 
 ## Parallel-docs migration rule
