@@ -27,6 +27,7 @@ describe('handoff command surface', () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('serve');
     expect(result.stdout).toContain('notify-discord');
+    expect(result.stdout).toContain('publish-discord-status');
     expect(result.stdout).toContain('dispatch-approved');
     expect(result.stdout).toContain('submit-windows-evidence');
     expect(result.stdout).toContain('list-windows-evidence');

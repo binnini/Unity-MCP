@@ -466,6 +466,14 @@ Send an approval message for a leader-owned handoff that is already in `awaiting
 unity-mcp-cli handoff notify-discord verification-handoff-1 ./MyGame --env-file .unity-mcp/handoff.env
 ```
 
+### `handoff publish-discord-status`
+
+Publish or refresh a read-only Discord monitoring card for the **current** handoff version. In this first slice, the only supported monitoring scope is `windows_validation_status`.
+
+```bash
+unity-mcp-cli handoff publish-discord-status verification-handoff-1 ./MyGame --scope windows_validation_status --refresh-mode upsert --env-file .unity-mcp/handoff.env
+```
+
 ### `handoff serve`
 
 Run the local HTTP bridge that exposes `/healthz` and `/discord/interactions` for a public tunnel or reverse proxy.

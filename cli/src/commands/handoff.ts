@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { createHandoffDispatchApprovedCommand } from './handoff/dispatch-approved.js';
 import { createHandoffListWindowsEvidenceCommand } from './handoff/list-windows-evidence.js';
 import { createHandoffNotifyDiscordCommand } from './handoff/notify-discord.js';
+import { createHandoffPublishDiscordStatusCommand } from './handoff/publish-discord-status.js';
 import { createHandoffReconcileWindowsEvidenceCommand } from './handoff/reconcile-windows-evidence.js';
 import { createHandoffServeCommand } from './handoff/serve.js';
 import { createHandoffSubmitWindowsEvidenceCommand } from './handoff/submit-windows-evidence.js';
@@ -12,6 +13,7 @@ export function createHandoffCommand(): Command {
 
   command.addCommand(createHandoffServeCommand());
   command.addCommand(createHandoffNotifyDiscordCommand());
+  command.addCommand(createHandoffPublishDiscordStatusCommand());
   command.addCommand(createHandoffDispatchApprovedCommand());
   command.addCommand(createHandoffSubmitWindowsEvidenceCommand());
   command.addCommand(createHandoffListWindowsEvidenceCommand());

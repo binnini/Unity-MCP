@@ -26,6 +26,7 @@ describe('dev environment CI/CD handoff v1 policy', () => {
     const runbook = readRepoFile('cli/docs/dev-env-cicd-handoff-runbook.md');
 
     expect(runbook).toContain('Offer only approve/reject controls for that exact handoff ID and record version.');
+    expect(runbook).toContain('Read-only monitoring cards follow the same boundary:');
     expect(runbook).toContain('Free-form command execution or direct Unity runtime control');
     expect(runbook).toContain('Provider differences may affect transport and bootstrap only.');
   });

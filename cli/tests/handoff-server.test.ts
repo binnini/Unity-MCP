@@ -172,4 +172,54 @@ describe('handoff bridge Discord interaction ingestion', () => {
 
     expect(readHandoffRecord(projectPath, 'handoff-2').state).toBe('awaiting_approval');
   });
+
+  it('keeps Discord interactions bounded to approve/reject actions only', () => {
+    const projectPath = makeProject();
+    const writer = createLeaderWriter('mac-omx-leader');
+    const awaiting = transitionHandoffState(createHandoffRecord({
+      handoffId: 'handoff-3',
+      sourceLane: 'mac-omx-leader',
+      targetLane: 'windows-codex',
+      requestedAction: 'plan_to_execution',
+      createdBy: writer,
+    }), writer, 'awaiting_approval');
+    writeHandoffRecord(projectPath, writer, awaiting);
+    createDiscordNotificationSpoolSnapshot({
+      projectPath,
+      messageId: 'message-3',
+      channelId: 'channel-1',
+      handoffId: 'handoff-3',
+      recordVersion: awaiting.recordVersion,
+      requestedAction: awaiting.requestedAction,
+      sourceLane: awaiting.sourceLane,
+      targetLane: awaiting.targetLane,
+    });
+
+    const body = JSON.stringify({
+      id: 'interaction-3',
+      type: 3,
+      member: { user: { id: 'approver-1', username: 'approver' } },
+      data: { custom_id: 'unity_mcp_monitor_refresh', component_type: 2 },
+      message: { id: 'message-3', channel_id: 'channel-1', content: 'Monitoring update', components: [] },
+    });
+    const signed = signBody(body);
+
+    const response = handleDiscordInteractionRequest({
+      projectPath,
+      config: {
+        discordPublicKey: signed.publicKeyHex,
+        handoffLeaderActor: 'mac-omx-leader',
+        handoffAllowedApproverIds: ['approver-1'],
+      },
+      rawBody: body,
+      signature: signed.signature,
+      timestamp: signed.timestamp,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const interactionResponse = JSON.parse(response.body);
+    expect(interactionResponse.type).toBe(4);
+    expect(interactionResponse.data.content).toContain('Unsupported Discord handoff action');
+    expect(readHandoffRecord(projectPath, 'handoff-3').state).toBe('awaiting_approval');
+  });
 });

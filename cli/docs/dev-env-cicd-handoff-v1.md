@@ -26,9 +26,10 @@ If the mac + OMX leader is unavailable, promotions freeze. In-flight lanes may f
 
 ## Current CLI bridge surface
 
-The repository now exposes six bounded handoff commands:
+The repository now exposes seven bounded handoff commands:
 
 - `unity-mcp-cli handoff notify-discord <handoff-id> <project-path>`
+- `unity-mcp-cli handoff publish-discord-status <handoff-id> <project-path> --scope windows_validation_status`
 - `unity-mcp-cli handoff serve <project-path>`
 - `unity-mcp-cli handoff dispatch-approved <handoff-id> <project-path>`
 - `unity-mcp-cli handoff submit-windows-evidence <project-path>`
@@ -36,6 +37,8 @@ The repository now exposes six bounded handoff commands:
 - `unity-mcp-cli handoff reconcile-windows-evidence <project-path>`
 
 `notify-discord` reads a leader-owned handoff record that is already `awaiting_approval`, sends a Discord approval message with approve/reject buttons, and persists message metadata under `.unity-mcp/handoff-spool/discord-notifications/`.
+
+`publish-discord-status` is the bounded monitoring path. It renders a read-only Discord status card for the **current** handoff record plus the latest spool-derived Windows evidence summary, then stores the card metadata under `.unity-mcp/handoff-spool/discord-notifications/`. It does not add buttons, does not accept Discord-side refresh commands, and does not mutate lifecycle state.
 
 `serve` exposes a local HTTP bridge for Discord interactions:
 
@@ -60,7 +63,7 @@ The bridge reads direct environment variables or an optional `--env-file` contai
 
 `submit-windows-evidence` is the bounded Windows lane intake path. It validates a `windows_lane_evidence_envelope` JSON payload and stores it under `.unity-mcp/handoff-spool/windows-evidence/` without mutating lifecycle state.
 
-`list-windows-evidence` gives operators visibility into queued/applied/pending-error Windows evidence spool records without inspecting the spool directory manually.
+`list-windows-evidence` gives operators visibility into queued/applied/pending-error Windows evidence spool records without inspecting the spool directory manually. `publish-discord-status --scope windows_validation_status` may reuse that same derived summary for Discord-native visibility, but Discord remains informational only.
 
 `reconcile-windows-evidence` is the leader-only replay step. It reads queued Windows evidence spool records, normalizes the structured evidence refs into the existing string-based handoff ledger, applies them through the leader-owned ledger, and leaves stale/error cases queued with a recorded `lastError`.
 
@@ -72,7 +75,7 @@ The first multi-discipline slice adds `planner` and `qa` as **bounded role types
 - They are not new canonical lanes.
 - They do not mutate lifecycle state.
 - They must reference `relatedHandoffId` and `relatedHandoffRecordVersion` when their outputs can affect promotion or readiness.
-- Discord remains a review/approval surface only, and GitHub Issues remain ops tracking only.
+- Discord remains a bounded review/approval/monitoring surface only, and GitHub Issues remain ops tracking only.
 
 Planner outputs feed the existing `plan -> execution` gate through leader review. QA outputs feed existing leader-owned readiness decisions and may block promotion at medium/high risk without creating a separate QA approval plane.
 

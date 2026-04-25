@@ -8,7 +8,8 @@ describe('windows codex lane starter artifacts', () => {
     const docPath = path.resolve('docs', 'dev-env-cicd-handoff-v1.md');
     const content = fs.readFileSync(docPath, 'utf-8');
 
-    expect(content).toContain('The repository now exposes six bounded handoff commands:');
+    expect(content).toContain('The repository now exposes seven bounded handoff commands:');
+    expect(content).toContain('publish-discord-status');
   });
 
   it('keeps the Windows lane documentation passive, external, and bounded', () => {

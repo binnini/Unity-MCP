@@ -10,7 +10,7 @@ and bot-mediated GitHub Actions dispatch into an auditable operating contract.
 | --- | --- | --- | --- |
 | Control | mac + OMX leader | Own the handoff ledger, route work, consume evidence, mutate lifecycle state | Leader failover or alternate control planes |
 | Execution | Windows Codex CLI or another approved lane | Perform delegated implementation/validation and submit evidence envelopes | Mutate handoff lifecycle state |
-| Approval | Slack or Discord adapter | Notify approvers and submit signed approve/reject intents for known handoff IDs and record versions | Free-form command execution or direct Unity runtime control |
+| Approval | Slack or Discord adapter | Publish bounded monitoring cards, notify approvers, and submit signed approve/reject intents for known handoff IDs and record versions | Free-form command execution or direct Unity runtime control |
 | Automation | Bot bridge | Dispatch allowlisted GitHub Actions from immutable leader-approved snapshots | Write ledger state directly or trigger arbitrary workflows |
 
 Only the leader mutates lifecycle state. Other lanes submit evidence or approval intents that the leader validates against the current handoff record version.
@@ -57,6 +57,12 @@ Approval messages in Slack or Discord must stay narrow:
 5. Let the leader reject stale, replayed, closed, superseded, or unauthorized approvals.
 
 Provider differences may affect transport and bootstrap only. They must not change lifecycle states, approval meaning, replay checks, or CI/CD dispatch policy.
+
+Read-only monitoring cards follow the same boundary:
+
+- they may show current handoff state plus the latest derived Windows evidence summary;
+- they must not render approve/reject controls unless the card is an exact awaiting-approval approval card;
+- they must not accept Discord-originated refresh or runtime commands; leader-owned CLI publish/refresh remains the only path.
 
 ## Verification -> CI/CD relay
 

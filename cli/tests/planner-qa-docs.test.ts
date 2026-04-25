@@ -29,7 +29,7 @@ describe('planner + QA first-slice docs', () => {
     expect(handoffDoc).toContain('QA outputs feed existing leader-owned readiness decisions');
     expect(contractDoc).toContain('Planner + QA review placement');
     expect(contractDoc).toContain('QA does not become a separate approval plane');
-    expect(contractDoc).toContain('Discord still handles only notify + approve/reject');
+    expect(contractDoc).toContain('Discord still handles only bounded notify + monitor + approve/reject');
   });
 
   it('keeps artist and map-designer deferred in the first slice', () => {

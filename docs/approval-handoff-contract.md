@@ -7,8 +7,9 @@ This contract defines the provider-neutral approval handoff used by the mixed ma
 Chat integrations are limited to:
 
 1. notifying humans that a leader-owned handoff is awaiting a decision;
-2. collecting an approve or reject decision for a known handoff ID and record version; and
-3. submitting a normalized approval intent back to the mac + OMX leader.
+2. publishing bounded read-only monitoring views for a known current handoff version;
+3. collecting an approve or reject decision for a known handoff ID and record version; and
+4. submitting a normalized approval intent back to the mac + OMX leader.
 
 Chat integrations must not execute arbitrary commands, mutate handoff lifecycle state directly, dispatch CI/CD directly, or control the Unity Editor/runtime.
 
@@ -19,7 +20,7 @@ Chat integrations must not execute arbitrary commands, mutate handoff lifecycle 
 | mac + OMX leader | Owns the canonical handoff ledger and is the only writer for lifecycle state transitions. |
 | Windows Codex lane | Submits execution or validation evidence envelopes only. |
 | Approval adapter contract | Defines the normalized notification and approval-intent shape. |
-| Discord adapter | Implements the v1 chat provider by sending notifications and submitting approval intents only. |
+| Discord adapter | Implements the v1 chat provider by sending bounded notifications/monitoring views and submitting approval intents only. |
 | Slack adapter | Deferred; must implement the same provider-neutral contract before activation. |
 
 ## Provider-neutral notification
@@ -62,6 +63,7 @@ Leader-side validation must reject intents when the handoff is unknown, not awai
 Discord is the first concrete provider because it satisfies the v1 interaction shape without requiring chat to become a control plane. The Discord adapter must:
 
 - render leader-created notifications as Discord messages with approve/reject controls;
+- render leader-created monitoring cards as read-only status messages for a known current handoff version;
 - verify Discord interaction signatures and timestamps before normalization;
 - normalize Discord button interactions into the provider-neutral approval intent shape;
 - submit only approval intents to the leader-owned ingestion path;
@@ -72,6 +74,7 @@ Discord is the first concrete provider because it satisfies the v1 interaction s
 The Discord adapter must not:
 
 - accept free-form chat commands;
+- accept refresh, status lookup, or runtime-control commands from Discord users;
 - trigger GitHub Actions or other CI/CD workflows directly;
 - write the handoff ledger directly;
 - advance handoffs after leader outage; or
@@ -104,4 +107,4 @@ Planner and QA are bounded role types inside the existing leader-owned model.
 - Planner artifacts may recommend scope, decomposition, or next actions, but the leader alone decides whether that recommendation affects an existing gate.
 - QA artifacts may recommend holds, freezes, or readiness outcomes, but QA does not become a separate approval plane.
 - At medium/high QA risk, the leader may require human QA review or explicit approval before advancing an existing gate.
-- Discord still handles only notify + approve/reject for known handoff records; it does not become a planner/QA task carrier.
+- Discord still handles only bounded notify + monitor + approve/reject for known handoff records; it does not become a planner/QA task carrier.

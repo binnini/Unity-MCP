@@ -7,9 +7,14 @@ const HANDOFF_SPOOL_DIR = path.join('.unity-mcp', 'handoff-spool');
 const DISCORD_NOTIFICATIONS_DIR = 'discord-notifications';
 const APPROVAL_INTENTS_DIR = 'approval-intents';
 
+export type DiscordNotificationRecordKind = 'approval_card' | 'monitoring_card';
+export type DiscordVisibilityScope = 'approval_gate' | 'windows_validation_status';
+export type DiscordRenderedFrom = 'ledger' | 'spool_summary' | 'mixed';
+
 export interface DiscordNotificationSpoolRecord {
   schemaVersion: number;
   provider: 'discord';
+  recordKind: DiscordNotificationRecordKind;
   messageId: string;
   channelId: string;
   handoffId: string;
@@ -17,9 +22,13 @@ export interface DiscordNotificationSpoolRecord {
   requestedAction: string;
   sourceLane: string;
   targetLane: string;
+  visibilityScope: DiscordVisibilityScope;
+  subjectLabel: string | null;
+  renderedFrom: DiscordRenderedFrom;
   sentAt: string;
   consumedAt: string | null;
   decision: HandoffApprovalDecision | null;
+  supersededAt: string | null;
 }
 
 export interface QueuedApprovalIntentSpoolRecord {
@@ -68,6 +77,21 @@ export function writeDiscordNotificationSpoolRecord(projectPath: string, record:
   return filePath;
 }
 
+export function listDiscordNotificationSpoolRecords(projectPath: string): DiscordNotificationSpoolRecord[] {
+  const directory = path.join(getHandoffSpoolDirectory(projectPath), DISCORD_NOTIFICATIONS_DIR);
+  if (!fs.existsSync(directory)) {
+    return [];
+  }
+
+  return fs.readdirSync(directory)
+    .filter(entry => entry.endsWith('.json'))
+    .map(entry => {
+      const filePath = path.join(directory, entry);
+      return parseDiscordNotificationSpoolRecord(fs.readFileSync(filePath, 'utf-8'), filePath);
+    })
+    .sort((left, right) => Date.parse(right.sentAt) - Date.parse(left.sentAt) || right.messageId.localeCompare(left.messageId));
+}
+
 export function readDiscordNotificationSpoolRecord(projectPath: string, messageId: string): DiscordNotificationSpoolRecord {
   const filePath = getDiscordNotificationFilePath(projectPath, messageId);
   if (!fs.existsSync(filePath)) {
@@ -85,6 +109,23 @@ export function markDiscordNotificationConsumed(projectPath: string, messageId: 
   };
   writeDiscordNotificationSpoolRecord(projectPath, nextRecord);
   return nextRecord;
+}
+
+export function findActiveDiscordMonitoringRecord(
+  projectPath: string,
+  input: {
+    handoffId: string;
+    recordVersion: number;
+    visibilityScope: Exclude<DiscordVisibilityScope, 'approval_gate'>;
+  },
+): DiscordNotificationSpoolRecord | null {
+  return listDiscordNotificationSpoolRecords(projectPath).find(record =>
+    record.recordKind === 'monitoring_card'
+    && record.handoffId === input.handoffId
+    && record.recordVersion === input.recordVersion
+    && record.visibilityScope === input.visibilityScope
+    && record.supersededAt === null,
+  ) ?? null;
 }
 
 export function hasQueuedApprovalIntent(projectPath: string, interactionId: string): boolean {
@@ -108,6 +149,9 @@ export function parseDiscordNotificationSpoolRecord(json: string, source = 'Disc
   return {
     schemaVersion: assertSchemaVersion(parsed.schemaVersion, source),
     provider: assertLiteral(parsed.provider, 'discord', `${source}.provider`),
+    recordKind: parsed.recordKind === undefined
+      ? 'approval_card'
+      : assertDiscordNotificationRecordKind(parsed.recordKind, `${source}.recordKind`),
     messageId: assertNonEmptyString(parsed.messageId, `${source}.messageId`),
     channelId: assertNonEmptyString(parsed.channelId, `${source}.channelId`),
     handoffId: assertNonEmptyString(parsed.handoffId, `${source}.handoffId`),
@@ -115,9 +159,21 @@ export function parseDiscordNotificationSpoolRecord(json: string, source = 'Disc
     requestedAction: assertNonEmptyString(parsed.requestedAction, `${source}.requestedAction`),
     sourceLane: assertNonEmptyString(parsed.sourceLane, `${source}.sourceLane`),
     targetLane: assertNonEmptyString(parsed.targetLane, `${source}.targetLane`),
+    visibilityScope: parsed.visibilityScope === undefined
+      ? 'approval_gate'
+      : assertDiscordVisibilityScope(parsed.visibilityScope, `${source}.visibilityScope`),
+    subjectLabel: parsed.subjectLabel === undefined || parsed.subjectLabel === null
+      ? null
+      : assertNonEmptyString(parsed.subjectLabel, `${source}.subjectLabel`),
+    renderedFrom: parsed.renderedFrom === undefined
+      ? 'ledger'
+      : assertDiscordRenderedFrom(parsed.renderedFrom, `${source}.renderedFrom`),
     sentAt: assertNonEmptyString(parsed.sentAt, `${source}.sentAt`),
     consumedAt: parsed.consumedAt === null ? null : assertNonEmptyString(parsed.consumedAt, `${source}.consumedAt`),
     decision: parsed.decision === null ? null : assertApprovalDecision(parsed.decision, `${source}.decision`),
+    supersededAt: parsed.supersededAt === undefined || parsed.supersededAt === null
+      ? null
+      : assertNonEmptyString(parsed.supersededAt, `${source}.supersededAt`),
   };
 }
 
@@ -129,7 +185,12 @@ export function createDiscordNotificationSpoolRecord(input: {
   requestedAction: string;
   sourceLane: string;
   targetLane: string;
+  recordKind?: DiscordNotificationRecordKind;
+  visibilityScope?: DiscordVisibilityScope;
+  subjectLabel?: string | null;
+  renderedFrom?: DiscordRenderedFrom;
   sentAt?: string;
+  supersededAt?: string | null;
 }): DiscordNotificationSpoolRecord {
   if (!Number.isInteger(input.recordVersion) || input.recordVersion < 1) {
     throw new HandoffSpoolError('Invalid recordVersion for Discord notification spool record.');
@@ -138,6 +199,7 @@ export function createDiscordNotificationSpoolRecord(input: {
   return {
     schemaVersion: HANDOFF_SPOOL_SCHEMA_VERSION,
     provider: 'discord',
+    recordKind: input.recordKind ?? 'approval_card',
     messageId: assertNonEmptyString(input.messageId, 'messageId'),
     channelId: assertNonEmptyString(input.channelId, 'channelId'),
     handoffId: assertNonEmptyString(input.handoffId, 'handoffId'),
@@ -145,9 +207,13 @@ export function createDiscordNotificationSpoolRecord(input: {
     requestedAction: assertNonEmptyString(input.requestedAction, 'requestedAction'),
     sourceLane: assertNonEmptyString(input.sourceLane, 'sourceLane'),
     targetLane: assertNonEmptyString(input.targetLane, 'targetLane'),
+    visibilityScope: input.visibilityScope ?? 'approval_gate',
+    subjectLabel: input.subjectLabel ?? null,
+    renderedFrom: input.renderedFrom ?? 'ledger',
     sentAt: input.sentAt ?? new Date().toISOString(),
     consumedAt: null,
     decision: null,
+    supersededAt: input.supersededAt ?? null,
   };
 }
 
@@ -234,6 +300,27 @@ function assertNonEmptyString(value: unknown, field: string): string {
 
 function assertApprovalDecision(value: unknown, field: string): HandoffApprovalDecision {
   if (value !== 'approve' && value !== 'reject') {
+    throw new HandoffSpoolError(`Invalid ${field}`);
+  }
+  return value;
+}
+
+function assertDiscordNotificationRecordKind(value: unknown, field: string): DiscordNotificationRecordKind {
+  if (value !== 'approval_card' && value !== 'monitoring_card') {
+    throw new HandoffSpoolError(`Invalid ${field}`);
+  }
+  return value;
+}
+
+function assertDiscordVisibilityScope(value: unknown, field: string): DiscordVisibilityScope {
+  if (value !== 'approval_gate' && value !== 'windows_validation_status') {
+    throw new HandoffSpoolError(`Invalid ${field}`);
+  }
+  return value;
+}
+
+function assertDiscordRenderedFrom(value: unknown, field: string): DiscordRenderedFrom {
+  if (value !== 'ledger' && value !== 'spool_summary' && value !== 'mixed') {
     throw new HandoffSpoolError(`Invalid ${field}`);
   }
   return value;

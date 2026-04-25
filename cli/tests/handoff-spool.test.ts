@@ -5,8 +5,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   createDiscordNotificationSpoolRecord,
   createQueuedApprovalIntentSpoolRecord,
+  findActiveDiscordMonitoringRecord,
   getQueuedApprovalIntentFilePath,
   hasQueuedApprovalIntent,
+  listDiscordNotificationSpoolRecords,
   markDiscordNotificationConsumed,
   readDiscordNotificationSpoolRecord,
   writeDiscordNotificationSpoolRecord,
@@ -48,6 +50,53 @@ describe('handoff spool persistence', () => {
     const consumed = markDiscordNotificationConsumed(projectPath, 'message-1', 'approve', '2026-04-24T00:01:00.000Z');
     expect(consumed.decision).toBe('approve');
     expect(consumed.consumedAt).toBe('2026-04-24T00:01:00.000Z');
+  });
+
+  it('finds an active monitoring card by handoff identity and preserves approval-card defaults', () => {
+    const projectPath = makeProject();
+    writeDiscordNotificationSpoolRecord(projectPath, createDiscordNotificationSpoolRecord({
+      messageId: 'approval-1',
+      channelId: 'channel-1',
+      handoffId: 'handoff-1',
+      recordVersion: 2,
+      requestedAction: 'plan_to_execution',
+      sourceLane: 'mac-omx-leader',
+      targetLane: 'windows-codex',
+    }));
+    writeDiscordNotificationSpoolRecord(projectPath, createDiscordNotificationSpoolRecord({
+      messageId: 'monitor-1',
+      channelId: 'channel-1',
+      handoffId: 'handoff-1',
+      recordVersion: 2,
+      requestedAction: 'windows_validation',
+      sourceLane: 'mac-omx-leader',
+      targetLane: 'windows-codex',
+      recordKind: 'monitoring_card',
+      visibilityScope: 'windows_validation_status',
+      subjectLabel: 'Windows validation',
+      renderedFrom: 'mixed',
+      sentAt: '2026-04-25T03:00:00.000Z',
+    }));
+
+    const approvalRecord = readDiscordNotificationSpoolRecord(projectPath, 'approval-1');
+    expect(approvalRecord.recordKind).toBe('approval_card');
+    expect(approvalRecord.visibilityScope).toBe('approval_gate');
+    expect(approvalRecord.renderedFrom).toBe('ledger');
+
+    const monitoring = findActiveDiscordMonitoringRecord(projectPath, {
+      handoffId: 'handoff-1',
+      recordVersion: 2,
+      visibilityScope: 'windows_validation_status',
+    });
+
+    expect(monitoring).toMatchObject({
+      messageId: 'monitor-1',
+      recordKind: 'monitoring_card',
+      visibilityScope: 'windows_validation_status',
+      subjectLabel: 'Windows validation',
+      renderedFrom: 'mixed',
+    });
+    expect(listDiscordNotificationSpoolRecords(projectPath).map(record => record.messageId).sort()).toEqual(['approval-1', 'monitor-1']);
   });
 
   it('stores queued approval intents idempotently by interaction id', () => {

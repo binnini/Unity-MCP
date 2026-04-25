@@ -5,12 +5,15 @@ import {
   DISCORD_REJECT_CUSTOM_ID,
   assertDiscordApproverAllowed,
   buildDiscordApprovalMessage,
+  buildDiscordMonitoringMessage,
   createDiscordEphemeralResponse,
   createDiscordUpdateResponse,
   getDiscordApprovalDecision,
   loadHandoffBridgeConfig,
   parseEnvFileContents,
   sendDiscordApprovalNotification,
+  sendDiscordMonitoringNotification,
+  updateDiscordMonitoringNotification,
   verifyDiscordRequest,
 } from '../src/utils/discord-approval.js';
 import { createHandoffRecord, createLeaderWriter } from '../src/utils/handoff-ledger.js';
@@ -135,5 +138,79 @@ describe('discord handoff approval helpers', () => {
     });
 
     expect(result).toEqual({ messageId: 'message-1', channelId: 'channel-1' });
+  });
+
+  it('builds and sends read-only monitoring messages without controls', async () => {
+    const record = createHandoffRecord({
+      handoffId: 'handoff-3',
+      sourceLane: 'mac-omx-leader',
+      targetLane: 'windows-codex',
+      requestedAction: 'windows_validation',
+      createdBy: createLeaderWriter('leader'),
+    });
+    const message = buildDiscordMonitoringMessage({
+      record,
+      subjectLabel: 'Windows validation smoke',
+      scope: 'windows_validation_status',
+      summary: {
+        handoffId: 'handoff-3',
+        handoffVersion: 1,
+        representativeStatus: 'pending_reconcile',
+        latestOutcome: 'passed',
+        queueState: 'pending_error',
+        latestSourceLane: 'windows-runner-1',
+        lastSubmittedAt: '2026-04-25T00:00:00.000Z',
+        lastAppliedRecordVersion: null,
+        ledgerRecordVersion: 1,
+        ledgerState: 'draft',
+        basedOn: 'spool_history',
+        notes: ['Latest pending reconcile error: No handoff record found'],
+        selectedRecordId: 'record-1',
+      },
+    });
+
+    expect(message.content).toContain('Scope: windows_validation_status');
+    expect(message.content).toContain('Windows status: pending_reconcile');
+    expect(message.content).toContain('Queue state: pending_error');
+    expect(message.content).toContain('Rendered from: spool_history (derived, read-only)');
+    expect(message.components).toEqual([]);
+
+    const sendResult = await sendDiscordMonitoringNotification({
+      discordBotToken: 'bot-token',
+      discordApprovalChannelId: 'channel-2',
+      handoffLeaderActor: 'leader',
+      handoffAllowedApproverIds: [],
+    }, {
+      record,
+      subjectLabel: 'Windows validation smoke',
+      scope: 'windows_validation_status',
+      summary: null,
+    }, async (url, init) => {
+      expect(String(url)).toContain('/channels/channel-2/messages');
+      expect(init?.method).toBe('POST');
+      return new Response(JSON.stringify({ id: 'monitor-1', channel_id: 'channel-2' }), { status: 200 });
+    });
+
+    expect(sendResult).toEqual({ messageId: 'monitor-1', channelId: 'channel-2' });
+
+    const updateResult = await updateDiscordMonitoringNotification({
+      discordBotToken: 'bot-token',
+      discordApprovalChannelId: 'channel-2',
+      handoffLeaderActor: 'leader',
+      handoffAllowedApproverIds: [],
+    }, {
+      channelId: 'channel-2',
+      messageId: 'monitor-1',
+      record,
+      subjectLabel: 'Windows validation smoke',
+      scope: 'windows_validation_status',
+      summary: null,
+    }, async (url, init) => {
+      expect(String(url)).toContain('/channels/channel-2/messages/monitor-1');
+      expect(init?.method).toBe('PATCH');
+      return new Response(JSON.stringify({ id: 'monitor-1', channel_id: 'channel-2' }), { status: 200 });
+    });
+
+    expect(updateResult).toEqual({ messageId: 'monitor-1', channelId: 'channel-2' });
   });
 });

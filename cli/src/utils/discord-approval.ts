@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { HandoffApprovalDecision, HandoffRecord } from './handoff-ledger.js';
+import type { WindowsEvidenceRepresentativeSummary } from './windows-evidence-summary.js';
 
 const DISCORD_API_BASE_URL = 'https://discord.com/api/v10';
 const DISCORD_MESSAGE_FLAGS_EPHEMERAL = 1 << 6;
@@ -212,6 +213,52 @@ export function buildDiscordApprovalMessage(record: HandoffRecord): {
   };
 }
 
+export function buildDiscordMonitoringMessage(input: {
+  record: HandoffRecord;
+  subjectLabel: string;
+  scope: 'windows_validation_status';
+  summary: WindowsEvidenceRepresentativeSummary | null;
+}): {
+  content: string;
+  components: DiscordComponent[];
+  allowed_mentions: { parse: string[] };
+} {
+  const lines = [
+    'Unity-MCP handoff monitoring update.',
+    `Scope: ${input.scope}`,
+    `Subject: ${input.subjectLabel}`,
+    `Handoff ID: ${input.record.handoffId}`,
+    `Record version: ${input.record.recordVersion}`,
+    `Route: ${input.record.sourceLane} -> ${input.record.targetLane}`,
+    `State: ${input.record.state}`,
+    `Requested action: ${input.record.requestedAction}`,
+  ];
+
+  if (!input.summary) {
+    lines.push('Windows evidence: no submitted history yet.');
+    lines.push('Rendered from: ledger');
+  } else {
+    lines.push(`Windows status: ${input.summary.representativeStatus}`);
+    lines.push(`Queue state: ${input.summary.queueState}`);
+    lines.push(`Latest outcome: ${input.summary.latestOutcome}`);
+    lines.push(`Latest source lane: ${input.summary.latestSourceLane}`);
+    lines.push(`Last submitted at: ${input.summary.lastSubmittedAt}`);
+    lines.push(`Rendered from: ${input.summary.basedOn} (derived, read-only)`);
+    if (input.summary.notes.length > 0) {
+      lines.push('Notes:');
+      for (const note of input.summary.notes) {
+        lines.push(`- ${note}`);
+      }
+    }
+  }
+
+  return {
+    content: lines.join('\n'),
+    components: [],
+    allowed_mentions: { parse: [] },
+  };
+}
+
 export async function sendDiscordApprovalNotification(
   config: HandoffBridgeConfig,
   record: HandoffRecord,
@@ -227,20 +274,55 @@ export async function sendDiscordApprovalNotification(
     body: JSON.stringify(buildDiscordApprovalMessage(record)),
   });
 
-  const responseText = await response.text();
-  if (!response.ok) {
-    throw new DiscordApprovalError(`Discord notification failed (${response.status}): ${responseText}`);
-  }
+  return parseDiscordMessageResponse(response);
+}
 
-  const parsed = JSON.parse(responseText) as { id?: string; channel_id?: string };
-  if (!parsed.id || !parsed.channel_id) {
-    throw new DiscordApprovalError('Discord notification response did not include message id/channel id.');
-  }
+export async function sendDiscordMonitoringNotification(
+  config: HandoffBridgeConfig,
+  input: {
+    record: HandoffRecord;
+    subjectLabel: string;
+    scope: 'windows_validation_status';
+    summary: WindowsEvidenceRepresentativeSummary | null;
+  },
+  fetchImpl: typeof fetch = fetch,
+): Promise<DiscordNotificationSendResult> {
+  const { discordBotToken, discordApprovalChannelId } = assertDiscordNotifyConfig(config);
+  const response = await fetchImpl(`${DISCORD_API_BASE_URL}/channels/${discordApprovalChannelId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bot ${discordBotToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(buildDiscordMonitoringMessage(input)),
+  });
 
-  return {
-    messageId: parsed.id,
-    channelId: parsed.channel_id,
-  };
+  return parseDiscordMessageResponse(response);
+}
+
+export async function updateDiscordMonitoringNotification(
+  config: HandoffBridgeConfig,
+  input: {
+    channelId: string;
+    messageId: string;
+    record: HandoffRecord;
+    subjectLabel: string;
+    scope: 'windows_validation_status';
+    summary: WindowsEvidenceRepresentativeSummary | null;
+  },
+  fetchImpl: typeof fetch = fetch,
+): Promise<DiscordNotificationSendResult> {
+  const { discordBotToken } = assertDiscordNotifyConfig(config);
+  const response = await fetchImpl(`${DISCORD_API_BASE_URL}/channels/${input.channelId}/messages/${input.messageId}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bot ${discordBotToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(buildDiscordMonitoringMessage(input)),
+  });
+
+  return parseDiscordMessageResponse(response);
 }
 
 export function verifyDiscordRequest(options: {
@@ -406,4 +488,21 @@ function parseCsvList(value: string | undefined): string[] {
     .split(',')
     .map(entry => entry.trim())
     .filter(Boolean);
+}
+
+async function parseDiscordMessageResponse(response: Response): Promise<DiscordNotificationSendResult> {
+  const responseText = await response.text();
+  if (!response.ok) {
+    throw new DiscordApprovalError(`Discord notification failed (${response.status}): ${responseText}`);
+  }
+
+  const parsed = JSON.parse(responseText) as { id?: string; channel_id?: string };
+  if (!parsed.id || !parsed.channel_id) {
+    throw new DiscordApprovalError('Discord notification response did not include message id/channel id.');
+  }
+
+  return {
+    messageId: parsed.id,
+    channelId: parsed.channel_id,
+  };
 }
