@@ -529,7 +529,7 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 **PowerShell スクリプト（コマンドライン）**
 ```powershell
 # 特定の Unity バージョンとモードのテストを実行
-.\commands\run-unity-tests.ps1 -unityVersion "6000.3.1f1" -testMode "editmode"
+.\commands\run-unity-tests.ps1 -unityVersion "6000.3.6f1" -testMode "editmode"
 ```
 
 ## テストモード
@@ -561,7 +561,7 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 
 ## CI 結果の解釈
 
-各 CI ジョブは `test-unity-{version}-{mode}` という名前です（例: `test-unity-6000-3-1f1-editmode`）。ジョブが失敗した場合:
+各 CI ジョブは `test-unity-{version}-{mode}` という名前です（例: `test-unity-6000-3-6f1-editmode`）。ジョブが失敗した場合:
 1. GitHub Actions で失敗したジョブを開く
 2. **Unity Test Runner** ステップを展開してインライン出力を確認
 3. 完全な XML レポートのために **test-results** アーティファクトをダウンロード
@@ -600,7 +600,7 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 2. **Unity Installer のビルド** - Unity パッケージインストーラーをテストしてエクスポート（`AI-Game-Dev-Installer.unitypackage`）
 3. **MCP Server のビルド** - [build-all.sh](../../Unity-MCP-Server/build-all.sh) を使用してクロスプラットフォーム実行ファイル（Windows、macOS、Linux）をコンパイル
 4. **Unity プラグインテスト** - 以下の組み合わせで包括的なテストを実行:
-   - 3種類の Unity バージョン: `2022.3.62f3`、`2023.2.22f1`、`6000.3.1f1`
+   - 3種類の Unity バージョン: `2022.3.62f3`、`2023.2.22f1`、`6000.3.6f1`
    - 3種類のテストモード: `editmode`、`playmode`、`standalone`
    - 2種類の OS: `windows-latest`、`ubuntu-latest`
    - 合計: **18のテストマトリックスの組み合わせ**

@@ -36,10 +36,14 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Name = "Animation Controllers",
             Route = "animation://controllers",
             MimeType = Consts.MimeType.TextJson,
+            ListResources = nameof(AnimationControllersRouteAll),
             Description = "List Animator Controller assets with compact read-only summary data."
         )]
         public ResponseResourceContent[] Controllers(string uri)
             => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.ListControllersPayload));
+
+        public ResponseListResource[] AnimationControllersRouteAll()
+            => MainThread.Instance.Run(AnimationResourceShared.AnimationControllersRouteAll);
     }
 
     [McpPluginResourceType]
@@ -68,10 +72,14 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Name = "Animation Clips",
             Route = "animation://clips",
             MimeType = Consts.MimeType.TextJson,
+            ListResources = nameof(AnimationClipsRouteAll),
             Description = "List AnimationClip assets with compact read-only summary data."
         )]
         public ResponseResourceContent[] Clips(string uri)
             => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.ListClipsPayload));
+
+        public ResponseListResource[] AnimationClipsRouteAll()
+            => MainThread.Instance.Run(AnimationResourceShared.AnimationClipsRouteAll);
     }
 
     [McpPluginResourceType]
@@ -100,10 +108,14 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Name = "Animation Character by Current Scene Path",
             Route = "animation://character/{id}",
             MimeType = Consts.MimeType.TextJson,
+            ListResources = nameof(AnimationCharactersAll),
             Description = "Get a read-only Animator binding summary by URL-escaped current-scene GameObject path."
         )]
         public ResponseResourceContent[] Character(string uri, string id)
             => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.CharacterPayload(id)));
+
+        public ResponseListResource[] AnimationCharactersAll()
+            => MainThread.Instance.Run(AnimationResourceShared.AnimationCharactersAll);
     }
 
     [McpPluginResourceType]
@@ -114,10 +126,14 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Name = "Pending Animation Review Sessions",
             Route = "review://animation/pending",
             MimeType = Consts.MimeType.TextJson,
+            ListResources = nameof(PendingReviewsAll),
             Description = "Return the static read-only pending animation review placeholder for Slice 3."
         )]
         public ResponseResourceContent[] PendingReviews(string uri)
             => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.PendingReviewsPayload));
+
+        public ResponseListResource[] PendingReviewsAll()
+            => MainThread.Instance.Run(AnimationResourceShared.PendingReviewsAll);
     }
 
     static class AnimationResourceShared
@@ -137,6 +153,11 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                     mimeType: Consts.MimeType.TextJson))
                 .ToArray();
 
+        public static ResponseListResource[] AnimationControllersRouteAll()
+            => SingleResource(
+                uri: "animation://controllers",
+                name: "Animation Controllers");
+
         public static ResponseListResource[] AnimationClipsAll()
             => FindAssetPaths("t:AnimationClip")
                 .Select(path => new ResponseListResource(
@@ -146,12 +167,43 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                     mimeType: Consts.MimeType.TextJson))
                 .ToArray();
 
+        public static ResponseListResource[] AnimationClipsRouteAll()
+            => SingleResource(
+                uri: "animation://clips",
+                name: "Animation Clips");
+
+        public static ResponseListResource[] AnimationCharactersAll()
+            => (GameObjectUtils.FindRootGameObjects() ?? Array.Empty<GameObject>())
+                .SelectMany(root => GameObjectUtils.GetAllRecursively(root))
+                .Where(kvp => kvp.Value.GetComponent<Animator>() != null)
+                .Select(kvp => new ResponseListResource(
+                    uri: $"animation://character/{Uri.EscapeDataString(kvp.Key)}",
+                    name: kvp.Value.name,
+                    enabled: true,
+                    mimeType: Consts.MimeType.TextJson))
+                .ToArray();
+
+        public static ResponseListResource[] PendingReviewsAll()
+            => SingleResource(
+                uri: "review://animation/pending",
+                name: "Pending Animation Review Sessions");
+
         public static ResponseResourceContent[] CreateJsonContent(string uri, object payload)
             => ResponseResourceContent.CreateText(
                 uri: uri,
                 mimeType: Consts.MimeType.TextJson,
                 text: JsonSerializer.Serialize(payload, JsonOptions)
             ).MakeArray();
+
+        static ResponseListResource[] SingleResource(string uri, string name)
+            => new[]
+            {
+                new ResponseListResource(
+                    uri: uri,
+                    name: name,
+                    enabled: true,
+                    mimeType: Consts.MimeType.TextJson)
+            };
 
         public static ListPayload<ControllerListItem> ListControllersPayload()
             => new()

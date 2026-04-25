@@ -73,8 +73,8 @@ jobs:
     needs: [build-and-zip-mcp-server]
     uses: ./.github/workflows/test_unity_plugin.yml
     with:
-      projectPath: "./Unity-Tests/6000.3.1f1"
-      unityVersion: "6000.3.1f1"
+      projectPath: "./Unity-Tests/6000.3.6f1"
+      unityVersion: "6000.3.6f1"
       testMode: "editmode"
     secrets: inherit
 
@@ -102,8 +102,8 @@ jobs:
   #   needs: [build-and-zip-mcp-server]
   #   uses: ./.github/workflows/test_unity_plugin.yml
   #   with:
-  #     projectPath: './Unity-Tests/6000.3.1f1'
-  #     unityVersion: '6000.3.1f1'
+  #     projectPath: './Unity-Tests/6000.3.6f1'
+  #     unityVersion: '6000.3.6f1'
   #     testMode: 'playmode'
   #   secrets: inherit
 
@@ -131,8 +131,8 @@ jobs:
     needs: [build-and-zip-mcp-server]
     uses: ./.github/workflows/test_unity_plugin.yml
     with:
-      projectPath: "./Unity-Tests/6000.3.1f1"
-      unityVersion: "6000.3.1f1"
+      projectPath: "./Unity-Tests/6000.3.6f1"
+      unityVersion: "6000.3.6f1"
       testMode: "standalone"
     secrets: inherit
 

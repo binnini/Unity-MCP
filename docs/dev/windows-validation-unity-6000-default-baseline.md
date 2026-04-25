@@ -1,69 +1,69 @@
-# Unity 6000.3.1f1 Default Development Baseline Validation Prompt
+# Unity 6000.3.6f1 Default Development Baseline Validation Prompt
 
-다음 브리프에 따라 `codex/game-pipeline-specialists-v1` 브랜치의 Unity 6000 기본 개발 버전 전환을 검증해주세요.
+?ㅼ쓬 釉뚮━?꾩뿉 ?곕씪 `codex/game-pipeline-specialists-v1` 釉뚮옖移섏쓽 Unity 6000 湲곕낯 媛쒕컻 踰꾩쟾 ?꾪솚??寃利앺빐二쇱꽭??
 
-## 목표
-- `Unity-MCP-Plugin/ProjectSettings/ProjectVersion.txt`가 가리키는 root development baseline이 Unity `6000.3.1f1`에서 정상 import / compile 되는지 확인
-- `commands/run-unity-tests.ps1 -TestMode compile`가 정상 동작하는지 확인
-- package floor(`2022.3`)와 installer / release baseline(`2022.3.62f3`)이 그대로 유지되는지 확인
+## 紐⑺몴
+- `Unity-MCP-Plugin/ProjectSettings/ProjectVersion.txt`媛 媛由ы궎??root development baseline??Unity `6000.3.6f1`?먯꽌 ?뺤긽 import / compile ?섎뒗吏 ?뺤씤
+- `commands/run-unity-tests.ps1 -TestMode compile`媛 ?뺤긽 ?숈옉?섎뒗吏 ?뺤씤
+- package floor(`2022.3`)? installer / release baseline(`2022.3.62f3`)??洹몃?濡??좎??섎뒗吏 ?뺤씤
 
-## 준비
-1. 브랜치 최신화
+## 以鍮?
+1. 釉뚮옖移?理쒖떊??
    ```bash
    git fetch origin
    git checkout codex/game-pipeline-specialists-v1
    git pull --ff-only
    ```
-2. 확인 대상 파일
+2. ?뺤씤 ????뚯씪
    - `Unity-MCP-Plugin/ProjectSettings/ProjectVersion.txt`
    - `Installer/ProjectSettings/ProjectVersion.txt`
    - `Unity-MCP-Plugin/Packages/com.ivanmurzak.unity.mcp/package.json`
    - `commands/run-unity-tests.ps1`
    - `docs/dev/Development.md`
-3. 기대 상태
-   - root dev baseline: `6000.3.1f1`
+3. 湲곕? ?곹깭
+   - root dev baseline: `6000.3.6f1`
    - installer baseline: `2022.3.62f3`
    - package floor: `2022.3`
 
-## 실행
-1. PowerShell helper compile-only 검증
+## ?ㅽ뻾
+1. PowerShell helper compile-only 寃利?
    ```powershell
-   .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode compile
+   .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode compile
    ```
-2. 가능하면 추가 EditMode 검증
+2. 媛?ν븯硫?異붽? EditMode 寃利?
    ```powershell
-   .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode editmode
+   .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode editmode
    ```
-3. 필요 시 직접 batchmode로 root project 확인
+3. ?꾩슂 ??吏곸젒 batchmode濡?root project ?뺤씤
    ```powershell
-   & "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" `
+   & "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" `
      -batchmode `
      -quit `
      -projectPath "<repo>\\Unity-MCP-Plugin" `
      -logFile "<temp>\\unity-mcp-root-6000-compile.log"
    ```
 
-## exact baseline 미설치 시 fallback
-- `6000.3.1f1`가 설치되어 있지 않으면, 그 사실을 먼저 명시하고 판정은 `inconclusive`로 유지해주세요.
-- 그 다음 참고용으로만 설치된 가장 가까운 `6000.3.x`(예: `6000.3.6f1`)에서 아래를 추가 실행해주세요.
+## exact baseline 誘몄꽕移???fallback
+- `6000.3.6f1`媛 ?ㅼ튂?섏뼱 ?덉? ?딆쑝硫? 洹??ъ떎??癒쇱? 紐낆떆?섍퀬 ?먯젙? `inconclusive`濡??좎??댁＜?몄슂.
+- 洹??ㅼ쓬 李멸퀬?⑹쑝濡쒕쭔 ?ㅼ튂??媛??媛源뚯슫 `6000.3.x`(?? `<closest-6000.3.x>`)?먯꽌 ?꾨옒瑜?異붽? ?ㅽ뻾?댁＜?몄슂.
   ```powershell
-  .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode compile
-  .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode editmode
+  .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\<closest-6000.3.x>\Editor\Unity.exe" -TestMode compile
+  .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\<closest-6000.3.x>\Editor\Unity.exe" -TestMode editmode
   ```
-- fallback 결과는 **exact baseline validation의 대체 판정**이 아니라, **근접 버전 참고 evidence**로만 적어주세요.
+- fallback 寃곌낵??**exact baseline validation???泥??먯젙**???꾨땲?? **洹쇱젒 踰꾩쟾 李멸퀬 evidence**濡쒕쭔 ?곸뼱二쇱꽭??
 
-## 리포트에 포함할 것
-- Windows 버전
-- Unity `6000.3.1f1` 설치 경로
-- exact baseline 설치 여부
-- compile-only 성공 / 실패
-- EditMode 성공 / 실패
-- 첫 compile error가 있으면 전체 에러 로그
-- `run-unity-tests.ps1` 자체 실행 오류가 있으면 그 오류
-- root project open 후 추가로 생긴 Unity-generated project setting diff가 있다면 파일 목록
-- fallback `6000.3.x`를 썼다면 그 버전과 결과를 분리해 기록
+## 由ы룷?몄뿉 ?ы븿??寃?
+- Windows 踰꾩쟾
+- Unity `6000.3.6f1` ?ㅼ튂 寃쎈줈
+- exact baseline ?ㅼ튂 ?щ?
+- compile-only ?깃났 / ?ㅽ뙣
+- EditMode ?깃났 / ?ㅽ뙣
+- 泥?compile error媛 ?덉쑝硫??꾩껜 ?먮윭 濡쒓렇
+- `run-unity-tests.ps1` ?먯껜 ?ㅽ뻾 ?ㅻ쪟媛 ?덉쑝硫?洹??ㅻ쪟
+- root project open ??異붽?濡??앷릿 Unity-generated project setting diff媛 ?덈떎硫??뚯씪 紐⑸줉
+- fallback `6000.3.x`瑜??쇰떎硫?洹?踰꾩쟾怨?寃곌낵瑜?遺꾨━??湲곕줉
 
-## 기대 판정 문구
-- Success: `default-dev baseline 6000.3.1f1 validated on Windows`
-- Failure: `default-dev baseline 6000.3.1f1 not validated on Windows`
-- Inconclusive: `default-dev baseline 6000.3.1f1 validation inconclusive on Windows`
+## 湲곕? ?먯젙 臾멸뎄
+- Success: `default-dev baseline 6000.3.6f1 validated on Windows`
+- Failure: `default-dev baseline 6000.3.6f1 not validated on Windows`
+- Inconclusive: `default-dev baseline 6000.3.6f1 validation inconclusive on Windows`

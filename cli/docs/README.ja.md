@@ -212,12 +212,12 @@ unity-mcp-cli install-plugin ./MyGame --plugin-version 0.51.6
 Unity Hub CLI経由でUnity Editorのバージョンをインストールします。
 
 ```bash
-unity-mcp-cli install-unity 6000.3.1f1
+unity-mcp-cli install-unity 6000.3.6f1
 ```
 
 | 引数/オプション | 必須 | 説明 |
 |---|---|---|
-| `[version]` | いいえ | インストールするUnity Editorのバージョン（例：`6000.3.1f1`） |
+| `[version]` | いいえ | インストールするUnity Editorのバージョン（例：`6000.3.6f1`） |
 | `--path <path>` | いいえ | 既存のプロジェクトから必要なバージョンを読み取る |
 
 引数もオプションも指定されない場合、Unity Hubのリリース一覧から最新の安定版をインストールします。
@@ -481,7 +481,7 @@ unity-mcp-cli install-plugin ./MyGame --verbose
 
 ```bash
 # 1. Create a new Unity project
-unity-mcp-cli create-project ./MyAIGame --unity 6000.3.1f1
+unity-mcp-cli create-project ./MyAIGame --unity 6000.3.6f1
 
 # 2. Install the Unity-MCP plugin
 unity-mcp-cli install-plugin ./MyAIGame

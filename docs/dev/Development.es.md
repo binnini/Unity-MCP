@@ -530,7 +530,7 @@ Las pruebas cubren tres modos en tres versiones de Unity (2022, 2023, 6000) y do
 **Script de PowerShell (línea de comandos)**
 ```powershell
 # Ejecutar pruebas para una versión de Unity y modo específicos
-.\commands\run-unity-tests.ps1 -unityVersion "6000.3.1f1" -testMode "editmode"
+.\commands\run-unity-tests.ps1 -unityVersion "6000.3.6f1" -testMode "editmode"
 ```
 
 ## Modos de prueba
@@ -562,7 +562,7 @@ Consulta [Unity: Añadir tests a tu paquete](https://docs.unity3d.com/Manual/cus
 
 ## Interpretación de resultados de CI
 
-Cada trabajo de CI se llama `test-unity-{version}-{mode}` (por ej., `test-unity-6000-3-1f1-editmode`). Cuando falla un trabajo:
+Cada trabajo de CI se llama `test-unity-{version}-{mode}` (por ej., `test-unity-6000-3-6f1-editmode`). Cuando falla un trabajo:
 1. Abre el trabajo fallido en GitHub Actions
 2. Expande el paso **Unity Test Runner** para ver la salida en línea
 3. Descarga el artefacto **test-results** para el informe XML completo
@@ -601,7 +601,7 @@ Esto es lo que necesitas saber al trabajar con CI como colaborador:
 2. **Compilación del Installer de Unity** - Prueba y exporta el instalador del paquete Unity (`AI-Game-Dev-Installer.unitypackage`)
 3. **Compilación del servidor MCP** - Compila ejecutables multiplataforma (Windows, macOS, Linux) usando [build-all.sh](../../Unity-MCP-Server/build-all.sh)
 4. **Pruebas del Plugin de Unity** - Ejecuta pruebas completas en:
-   - 3 versiones de Unity: `2022.3.62f3`, `2023.2.22f1`, `6000.3.1f1`
+   - 3 versiones de Unity: `2022.3.62f3`, `2023.2.22f1`, `6000.3.6f1`
    - 3 modos de prueba: `editmode`, `playmode`, `standalone`
    - 2 sistemas operativos: `windows-latest`, `ubuntu-latest`
    - Total: **18 combinaciones en la matriz de pruebas**

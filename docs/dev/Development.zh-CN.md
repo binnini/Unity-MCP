@@ -530,7 +530,7 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 **PowerShell 脚本（命令行）**
 ```powershell
 # 针对特定 Unity 版本和模式运行测试
-.\commands\run-unity-tests.ps1 -unityVersion "6000.3.1f1" -testMode "editmode"
+.\commands\run-unity-tests.ps1 -unityVersion "6000.3.6f1" -testMode "editmode"
 ```
 
 ## 测试模式
@@ -562,7 +562,7 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 
 ## 解读 CI 结果
 
-每个 CI 任务命名为 `test-unity-{版本}-{模式}`（如 `test-unity-6000-3-1f1-editmode`）。当任务失败时：
+每个 CI 任务命名为 `test-unity-{版本}-{模式}`（如 `test-unity-6000-3-6f1-editmode`）。当任务失败时：
 1. 在 GitHub Actions 中打开失败的任务
 2. 展开 **Unity Test Runner** 步骤查看内联输出
 3. 下载 **test-results** 构件以获取完整的 XML 报告
@@ -601,7 +601,7 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 2. **构建 Unity Installer** - 测试并导出 Unity 包安装程序（`AI-Game-Dev-Installer.unitypackage`）
 3. **构建 MCP Server** - 使用 [build-all.sh](../../Unity-MCP-Server/build-all.sh) 编译跨平台可执行文件（Windows、macOS、Linux）
 4. **Unity 插件测试** - 跨以下组合运行全面测试：
-   - 3 个 Unity 版本：`2022.3.62f3`、`2023.2.22f1`、`6000.3.1f1`
+   - 3 个 Unity 版本：`2022.3.62f3`、`2023.2.22f1`、`6000.3.6f1`
    - 3 种测试模式：`editmode`、`playmode`、`standalone`
    - 2 种操作系统：`windows-latest`、`ubuntu-latest`
    - 合计：**18 种测试矩阵组合**

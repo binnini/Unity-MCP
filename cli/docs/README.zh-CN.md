@@ -212,12 +212,12 @@ unity-mcp-cli install-plugin ./MyGame --plugin-version 0.51.6
 通过 Unity Hub CLI 安装 Unity 编辑器版本。
 
 ```bash
-unity-mcp-cli install-unity 6000.3.1f1
+unity-mcp-cli install-unity 6000.3.6f1
 ```
 
 | 参数 / 选项 | 必需 | 描述 |
 |---|---|---|
-| `[version]` | 否 | 要安装的 Unity 编辑器版本（例如 `6000.3.1f1`） |
+| `[version]` | 否 | 要安装的 Unity 编辑器版本（例如 `6000.3.6f1`） |
 | `--path <path>` | 否 | 从现有项目中读取所需版本 |
 
 如果既未提供参数也未提供选项，该命令将从 Unity Hub 的发行列表中安装最新的稳定版本。
@@ -481,7 +481,7 @@ unity-mcp-cli install-plugin ./MyGame --verbose
 
 ```bash
 # 1. Create a new Unity project
-unity-mcp-cli create-project ./MyAIGame --unity 6000.3.1f1
+unity-mcp-cli create-project ./MyAIGame --unity 6000.3.6f1
 
 # 2. Install the Unity-MCP plugin
 unity-mcp-cli install-plugin ./MyAIGame

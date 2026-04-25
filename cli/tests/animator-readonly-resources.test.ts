@@ -14,6 +14,18 @@ function readResource(): string {
   return fs.readFileSync(resourcePath, 'utf-8');
 }
 
+function readResourceTypeSlices(source: string): Array<{ name: string; body: string }> {
+  return source
+    .split('[McpPluginResourceType]')
+    .slice(1)
+    .map((slice) => `[McpPluginResourceType]${slice}`)
+    .map((body) => ({
+      name: body.match(/public class (Resource_[A-Za-z0-9_]+)/)?.[1] ?? '',
+      body,
+    }))
+    .filter((slice) => slice.name.startsWith('Resource_'));
+}
+
 describe('Animator read-only resources static contract', () => {
   it('registers the six Slice 3 resource routes', () => {
     const source = readResource();
@@ -38,9 +50,9 @@ describe('Animator read-only resources static contract', () => {
 
   it('keeps one MCP resource entry point per resource type for assembly scanning', () => {
     const source = readResource();
-    const typeBodies = [...source.matchAll(/\[McpPluginResourceType\][\s\S]*?public class (Resource_[A-Za-z0-9_]+)[\s\S]*?\n    }\n/g)];
+    const typeBodies = readResourceTypeSlices(source);
 
-    expect(typeBodies.map((match) => match[1]).sort()).toEqual([
+    expect(typeBodies.map((match) => match.name).sort()).toEqual([
       'Resource_AnimationCharacter',
       'Resource_AnimationClip',
       'Resource_AnimationClips',
@@ -50,8 +62,25 @@ describe('Animator read-only resources static contract', () => {
     ]);
 
     for (const match of typeBodies) {
-      const body = match[0];
-      expect(body.match(/\[McpPluginResource\s/g)?.length).toBe(1);
+      expect(match.body.match(/\[McpPluginResource\s/g)?.length).toBe(1);
+    }
+  });
+
+  it('declares ListResources for every MCP resource entry point required by the packaged builder', () => {
+    const source = readResource();
+
+    const requiredListMethods = [
+      'AnimationControllersRouteAll',
+      'AnimationControllersAll',
+      'AnimationClipsRouteAll',
+      'AnimationClipsAll',
+      'AnimationCharactersAll',
+      'PendingReviewsAll',
+    ];
+
+    for (const methodName of requiredListMethods) {
+      expect(source).toContain(`ListResources = nameof(${methodName})`);
+      expect(source).toContain(`ResponseListResource[] ${methodName}(`);
     }
   });
 

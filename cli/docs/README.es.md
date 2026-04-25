@@ -212,12 +212,12 @@ unity-mcp-cli install-plugin ./MyGame --plugin-version 0.51.6
 Instala una version del Editor de Unity mediante la CLI de Unity Hub.
 
 ```bash
-unity-mcp-cli install-unity 6000.3.1f1
+unity-mcp-cli install-unity 6000.3.6f1
 ```
 
 | Argumento / Opcion | Requerido | Descripcion |
 |---|---|---|
-| `[version]` | No | Version del Editor de Unity a instalar (ej. `6000.3.1f1`) |
+| `[version]` | No | Version del Editor de Unity a instalar (ej. `6000.3.6f1`) |
 | `--path <path>` | No | Lee la version requerida desde un proyecto existente |
 
 Si no se proporciona ningun argumento ni opcion, el comando instala la ultima version estable desde la lista de lanzamientos de Unity Hub.
@@ -481,7 +481,7 @@ Configura un proyecto Unity MCP completo desde cero con un solo script:
 
 ```bash
 # 1. Create a new Unity project
-unity-mcp-cli create-project ./MyAIGame --unity 6000.3.1f1
+unity-mcp-cli create-project ./MyAIGame --unity 6000.3.6f1
 
 # 2. Install the Unity-MCP plugin
 unity-mcp-cli install-plugin ./MyAIGame

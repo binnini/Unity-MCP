@@ -1,158 +1,158 @@
-# Windows Handoff Prompt — `game-pipeline-specialists-v1`
+# Windows Handoff Prompt ??`game-pipeline-specialists-v1`
 
-Unity-MCP 저장소의 `codex/game-pipeline-specialists-v1` 브랜치를 최신화한 뒤, **이 브랜치의 목표와 현재 Windows 실행 blocker를 기준으로** 후속 작업을 이어가주세요.
+Unity-MCP ??μ냼??`codex/game-pipeline-specialists-v1` 釉뚮옖移섎? 理쒖떊?뷀븳 ?? **??釉뚮옖移섏쓽 紐⑺몴? ?꾩옱 Windows ?ㅽ뻾 blocker瑜?湲곗??쇰줈** ?꾩냽 ?묒뾽???댁뼱媛二쇱꽭??
 
-## 이 브랜치의 목표
-이 브랜치는 **Unity-MCP를 게임 제작 파이프라인 specialist 구조로 확장하는 1차 기반 작업**을 담고 있습니다. 지금까지의 합의 범위는 아래와 같습니다.
+## ??釉뚮옖移섏쓽 紐⑺몴
+??釉뚮옖移섎뒗 **Unity-MCP瑜?寃뚯엫 ?쒖옉 ?뚯씠?꾨씪??specialist 援ъ“濡??뺤옣?섎뒗 1李?湲곕컲 ?묒뾽**???닿퀬 ?덉뒿?덈떎. 吏湲덇퉴吏???⑹쓽 踰붿쐞???꾨옒? 媛숈뒿?덈떎.
 
-1. **specialist 아키텍처/계약/로드맵 문서화**
+1. **specialist ?꾪궎?띿쿂/怨꾩빟/濡쒕뱶留?臾몄꽌??*
    - specialist contract
    - animator reference specialist
    - feedback protocol
    - migration roadmap
-2. **specialist contract validator와 fixture 기반 검증**
-3. **Animator read-only resource surface 추가**
+2. **specialist contract validator? fixture 湲곕컲 寃利?*
+3. **Animator read-only resource surface 異붽?**
    - `animation://controllers`
    - `animation://controller/{path}`
    - `animation://clips`
    - `animation://clip/{path}`
    - `animation://character/{id}`
    - `review://animation/pending`
-4. **root default development baseline을 Unity `6000.3.1f1`로 승격**
-   - 단, package compatibility floor는 계속 `2022.3`
-   - installer / release baseline은 계속 `2022.3.62f3`
+4. **root default development baseline??Unity `6000.3.6f1`濡??밴꺽**
+   - ?? package compatibility floor??怨꾩냽 `2022.3`
+   - installer / release baseline? 怨꾩냽 `2022.3.62f3`
 
-즉, 이 브랜치의 핵심 목적은:
+利? ??釉뚮옖移섏쓽 ?듭떖 紐⑹쟻?:
 
-> **게임 파이프라인 specialist 확장의 첫 reference slice를 만들고, 그중 Animator specialist의 read-only inspection surface를 Unity에서 실제로 동작 가능한 상태로 만드는 것**
+> **寃뚯엫 ?뚯씠?꾨씪??specialist ?뺤옣??泥?reference slice瑜?留뚮뱾怨? 洹몄쨷 Animator specialist??read-only inspection surface瑜?Unity?먯꽌 ?ㅼ젣濡??숈옉 媛?ν븳 ?곹깭濡?留뚮뱶??寃?*
 
-입니다.
+?낅땲??
 
-## 배경
-- 이전 fallback `6000.3.6f1` 검증에서 MCP plugin startup 중 아래 오류가 있었습니다.
+## 諛곌꼍
+- ?댁쟾 fallback `6000.3.6f1` 寃利앹뿉??MCP plugin startup 以??꾨옒 ?ㅻ쪟媛 ?덉뿀?듬땲??
   - `System.InvalidOperationException: Method com.IvanMurzak.Unity.MCP.Editor.API.Resource_Animation not found in type Resource_Animation`
-- 이번 수정은 Animation resource를 단일 `Resource_Animation` 타입에서 여러 resource type으로 분리해, MCP builder의 resource discovery shape에 맞추는 것입니다.
-- exact baseline `6000.3.1f1`가 있으면 그 버전으로, 없으면 `6000.3.x` fallback evidence로만 검증해주세요.
+- ?대쾲 ?섏젙? Animation resource瑜??⑥씪 `Resource_Animation` ??낆뿉???щ윭 resource type?쇰줈 遺꾨━?? MCP builder??resource discovery shape??留욎텛??寃껋엯?덈떎.
+- exact baseline `6000.3.6f1`媛 ?덉쑝硫?洹?踰꾩쟾?쇰줈, ?놁쑝硫?`6000.3.x` fallback evidence濡쒕쭔 寃利앺빐二쇱꽭??
 
-## 현재 Windows 실행 blocker
-현재 가장 중요한 blocker는 baseline patch mismatch 자체보다, **Animator resource registration failure가 MCP plugin startup을 깨뜨리는지 여부**입니다.
+## ?꾩옱 Windows ?ㅽ뻾 blocker
+?꾩옱 媛??以묒슂??blocker??baseline patch mismatch ?먯껜蹂대떎, **Animator resource registration failure媛 MCP plugin startup??源⑤쑉由щ뒗吏 ?щ?**?낅땲??
 
-따라서 현재 lane의 우선순위는:
-1. animation resource registration failure 제거
-2. compile / startup 안정화
-3. 그 다음 EditMode failure shape 재평가
-4. 마지막에 baseline exact validation 재판정
+?곕씪???꾩옱 lane???곗꽑?쒖쐞??
+1. animation resource registration failure ?쒓굅
+2. compile / startup ?덉젙??
+3. 洹??ㅼ쓬 EditMode failure shape ?ы룊媛
+4. 留덉?留됱뿉 baseline exact validation ?ы뙋??
 
-입니다.
+?낅땲??
 
-## 목표
-1. `Resource_Animation not found` startup error가 사라졌는지 확인
-2. `commands/run-unity-tests.ps1 -TestMode compile`가 더 이상 자체 포맷 오류 없이 동작하는지 확인
-3. fallback `6000.3.x`에서 root project import / compile 결과가 이전보다 개선됐는지 확인
-4. 가능하면 EditMode도 다시 실행해 failure shape가 바뀌었는지 확인
+## 紐⑺몴
+1. `Resource_Animation not found` startup error媛 ?щ씪議뚮뒗吏 ?뺤씤
+2. `commands/run-unity-tests.ps1 -TestMode compile`媛 ???댁긽 ?먯껜 ?щ㎎ ?ㅻ쪟 ?놁씠 ?숈옉?섎뒗吏 ?뺤씤
+3. fallback `6000.3.x`?먯꽌 root project import / compile 寃곌낵媛 ?댁쟾蹂대떎 媛쒖꽑?먮뒗吏 ?뺤씤
+4. 媛?ν븯硫?EditMode???ㅼ떆 ?ㅽ뻾??failure shape媛 諛붾뚯뿀?붿? ?뺤씤
 
-## 준비
-1. 브랜치 최신화
+## 以鍮?
+1. 釉뚮옖移?理쒖떊??
    ```bash
    git fetch origin
    git checkout codex/game-pipeline-specialists-v1
    git pull --ff-only
    ```
 
-2. 확인할 핵심 커밋
-   - `2b1ae526` — PowerShell compile-mode duration formatting fix
-   - `cf1a0e56` — animation resource type split for MCP resource scanning compatibility
+2. ?뺤씤???듭떖 而ㅻ컠
+   - `2b1ae526` ??PowerShell compile-mode duration formatting fix
+   - `cf1a0e56` ??animation resource type split for MCP resource scanning compatibility
 
-3. 확인할 파일
+3. ?뺤씤???뚯씪
    - `docs/specialists/architecture-v1.md`
    - `docs/specialists/animator-specialist-v1.md`
    - `commands/run-unity-tests.ps1`
    - `Unity-MCP-Plugin/Packages/com.ivanmurzak.unity.mcp/Editor/Scripts/API/Resource/Animation.cs`
    - `cli/tests/animator-readonly-resources.test.ts`
 
-## 변경 금지 / 주의 경계
-- `Unity-MCP-Plugin/Packages/com.ivanmurzak.unity.mcp/package.json`의 `"unity": "2022.3"`는 이번 lane에서 올리지 않습니다.
-- `Installer/ProjectSettings/ProjectVersion.txt`의 `2022.3.62f3` baseline은 이번 lane에서 바꾸지 않습니다.
-- specialist bus / mailbox / scheduler / dispatch runtime은 이번 lane 범위가 아닙니다.
-- Animator resource는 계속 **read-only**여야 하며, write tool/draft workflow는 아직 후속 slice입니다.
-- Unity가 자동 생성한 churn(`ProjectSettings`, `Packages/manifest.json`, `UserSettings`)은 의도한 코드 변경과 분리해 보고해주세요.
+## 蹂寃?湲덉? / 二쇱쓽 寃쎄퀎
+- `Unity-MCP-Plugin/Packages/com.ivanmurzak.unity.mcp/package.json`??`"unity": "2022.3"`???대쾲 lane?먯꽌 ?щ━吏 ?딆뒿?덈떎.
+- `Installer/ProjectSettings/ProjectVersion.txt`??`2022.3.62f3` baseline? ?대쾲 lane?먯꽌 諛붽씀吏 ?딆뒿?덈떎.
+- specialist bus / mailbox / scheduler / dispatch runtime? ?대쾲 lane 踰붿쐞媛 ?꾨떃?덈떎.
+- Animator resource??怨꾩냽 **read-only**?ъ빞 ?섎ŉ, write tool/draft workflow???꾩쭅 ?꾩냽 slice?낅땲??
+- Unity媛 ?먮룞 ?앹꽦??churn(`ProjectSettings`, `Packages/manifest.json`, `UserSettings`)? ?섎룄??肄붾뱶 蹂寃쎄낵 遺꾨━??蹂닿퀬?댁＜?몄슂.
 
-## 기대 코드 상태
-- `commands/run-unity-tests.ps1:239` 부근 duration 출력은 `mm\:ss`
-- `Animation.cs`에는 route 6개가 유지됨:
+## 湲곕? 肄붾뱶 ?곹깭
+- `commands/run-unity-tests.ps1:239` 遺洹?duration 異쒕젰? `mm\:ss`
+- `Animation.cs`?먮뒗 route 6媛쒓? ?좎???
   - `animation://controllers`
   - `animation://controller/{path}`
   - `animation://clips`
   - `animation://clip/{path}`
   - `animation://character/{id}`
   - `review://animation/pending`
-- 하지만 이제 각 MCP resource type은 분리된 class 형태여야 함
-- 한 resource type에 여러 `[McpPluginResource]` entry point를 몰아넣지 않아야 함
+- ?섏?留??댁젣 媛?MCP resource type? 遺꾨━??class ?뺥깭?ъ빞 ??
+- ??resource type???щ윭 `[McpPluginResource]` entry point瑜?紐곗븘?ｌ? ?딆븘????
 
-## 실행
-### A. exact baseline이 설치된 경우
-Unity `6000.3.1f1`가 설치돼 있으면 아래를 실행:
-```powershell
-.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode compile
-.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode editmode
-```
-
-### B. exact baseline이 없으면 fallback evidence only
-설치된 가장 가까운 `6000.3.x`(예: `6000.3.6f1`)에서만 참고용으로 실행:
+## ?ㅽ뻾
+### A. exact baseline???ㅼ튂??寃쎌슦
+Unity `6000.3.6f1`媛 ?ㅼ튂???덉쑝硫??꾨옒瑜??ㅽ뻾:
 ```powershell
 .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode compile
 .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode editmode
 ```
 
-### 추가 batchmode 확인(선택)
+### B. exact baseline???놁쑝硫?fallback evidence only
+?ㅼ튂??媛??媛源뚯슫 `6000.3.x`(?? `<closest-6000.3.x>`)?먯꽌留?李멸퀬?⑹쑝濡??ㅽ뻾:
 ```powershell
-& "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" `
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\<closest-6000.3.x>\Editor\Unity.exe" -TestMode compile
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\<closest-6000.3.x>\Editor\Unity.exe" -TestMode editmode
+```
+
+### 異붽? batchmode ?뺤씤(?좏깮)
+```powershell
+& "C:\Program Files\Unity\Hub\Editor\<closest-6000.3.x>\Editor\Unity.exe" `
   -batchmode `
   -quit `
   -projectPath "<repo>\\Unity-MCP-Plugin" `
   -logFile "<temp>\\unity-mcp-root-6000-compile.log"
 ```
 
-## 중점 확인
-1. **startup exception 변화**
-   - 이전의
+## 以묒젏 ?뺤씤
+1. **startup exception 蹂??*
+   - ?댁쟾??
      - `Method ... Resource_Animation not found in type Resource_Animation`
-   - 가 사라졌는지
-2. **run-unity-tests.ps1 자체 오류**
-   - 이전의
+   - 媛 ?щ씪議뚮뒗吏
+2. **run-unity-tests.ps1 ?먯껜 ?ㅻ쪟**
+   - ?댁쟾??
      - `ToString(...) Input string was not in a correct format.`
-   - 가 사라졌는지
-3. **compile-only 결과**
+   - 媛 ?щ씪議뚮뒗吏
+3. **compile-only 寃곌낵**
    - Unity exit code
-   - 첫 compile/startup error
-   - root project import 완료 여부
-4. **EditMode 결과**
+   - 泥?compile/startup error
+   - root project import ?꾨즺 ?щ?
+4. **EditMode 寃곌낵**
    - exit code
-   - 총 passed / failed
-   - 첫 실패 메시지
-   - 여전히 `Reflector cannot be null` 계열인지, 아니면 failure shape가 바뀌었는지
+   - 珥?passed / failed
+   - 泥??ㅽ뙣 硫붿떆吏
+   - ?ъ쟾??`Reflector cannot be null` 怨꾩뿴?몄?, ?꾨땲硫?failure shape媛 諛붾뚯뿀?붿?
 5. **Unity-generated diff**
    - `ProjectSettings.asset`
    - `ProjectVersion.txt`
    - `Packages/manifest.json`
    - `ProjectSettings/Packages/`
    - `UserSettings/...`
-   등 추가 churn이 생기는지
+   ??異붽? churn???앷린?붿?
 
-## 리포트에 포함
-- Windows 버전
-- 사용한 Unity 버전과 설치 경로
-- exact baseline 설치 여부
-- compile-only 성공/실패
-- EditMode 성공/실패
-- `Resource_Animation not found` 오류의 재현 여부
-- PowerShell formatting error 재현 여부
-- 첫 startup/compile error 전문
-- 첫 EditMode failure 전문
-- Unity-generated diff 파일 목록
-- exact baseline이 아니면 반드시 `fallback evidence only`라고 명시
+## 由ы룷?몄뿉 ?ы븿
+- Windows 踰꾩쟾
+- ?ъ슜??Unity 踰꾩쟾怨??ㅼ튂 寃쎈줈
+- exact baseline ?ㅼ튂 ?щ?
+- compile-only ?깃났/?ㅽ뙣
+- EditMode ?깃났/?ㅽ뙣
+- `Resource_Animation not found` ?ㅻ쪟???ы쁽 ?щ?
+- PowerShell formatting error ?ы쁽 ?щ?
+- 泥?startup/compile error ?꾨Ц
+- 泥?EditMode failure ?꾨Ц
+- Unity-generated diff ?뚯씪 紐⑸줉
+- exact baseline???꾨땲硫?諛섎뱶??`fallback evidence only`?쇨퀬 紐낆떆
 
-## 최종 판정 문구
+## 理쒖쥌 ?먯젙 臾멸뎄
 - Success:
   - `animation resource registration fix validated on Windows`
 - Failure:
@@ -160,6 +160,6 @@ Unity `6000.3.1f1`가 설치돼 있으면 아래를 실행:
 - Inconclusive:
   - `animation resource registration fix validation inconclusive on Windows`
 
-## 작업 종료 시 함께 알려줄 것
-- 현재 branch 목적 대비 남은 blocker 한 줄 요약
-- 다음으로 Windows에서 계속 진행해야 할 가장 작은 다음 실험 1~2개
+## ?묒뾽 醫낅즺 ???④퍡 ?뚮젮以?寃?
+- ?꾩옱 branch 紐⑹쟻 ?鍮??⑥? blocker ??以??붿빟
+- ?ㅼ쓬?쇰줈 Windows?먯꽌 怨꾩냽 吏꾪뻾?댁빞 ??媛???묒? ?ㅼ쓬 ?ㅽ뿕 1~2媛?
