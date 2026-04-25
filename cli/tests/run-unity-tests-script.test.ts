@@ -1,10 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, '..', '..');
+const scriptPath = path.join(repoRoot, 'commands', 'run-unity-tests.ps1');
 
 describe('run-unity-tests PowerShell helper', () => {
   it('uses a valid TimeSpan format string for compile-mode duration output', () => {
-    const scriptPath = path.resolve('commands', 'run-unity-tests.ps1');
     const script = fs.readFileSync(scriptPath, 'utf-8');
 
     expect(script).toContain("Duration: $($duration.ToString('mm\\:ss'))");
@@ -12,7 +16,6 @@ describe('run-unity-tests PowerShell helper', () => {
   });
 
   it('exposes compile mode as a first-class validation path', () => {
-    const scriptPath = path.resolve('commands', 'run-unity-tests.ps1');
     const script = fs.readFileSync(scriptPath, 'utf-8');
 
     expect(script).toContain("[ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'all')]");
