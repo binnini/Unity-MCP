@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "windows_lane_evidence_envelope",
+  "recordId": "5b66bf040b4f085d882d6f7cbc25b032faca0fd70fcd93678d3ae35a91dcd69e",
+  "handoffId": "windows-validation-p0-2-20260425t012603z",
+  "handoffVersion": 1,
+  "sourceLaneId": "windows-runner-1",
+  "outcome": "failed",
+  "summary": "Windows validation failed: team status failed with exit code 1",
+  "submittedAt": "2026-04-25T01:38:00.3616899+00:00",
+  "storedAt": "2026-04-25T01:38:00.545Z",
+  "consumedAt": null,
+  "appliedRecordVersion": null,
+  "lastError": null,
+  "envelope": {
+    "schemaVersion": 1,
+    "kind": "windows_lane_evidence_envelope",
+    "handoffId": "windows-validation-p0-2-20260425t012603z",
+    "handoffVersion": 1,
+    "sourceLane": {
+      "kind": "windows_codex",
+      "laneId": "windows-runner-1"
+    },
+    "submittedAt": "2026-04-25T01:38:00.3616899+00:00",
+    "outcome": "failed",
+    "summary": "Windows validation failed: team status failed with exit code 1",
+    "evidenceRefs": [
+      {
+        "type": "log",
+        "uri": "file:///C:/unity-mcp-agent/logs/windows-validation-p0-2-20260425t012603z-20260425T013748Z-runner.log"
+      },
+      {
+        "type": "note",
+        "uri": "file:///C:/unity-mcp-agent/outbox/windows-validation-p0-2-20260425t012603z-20260425T013748Z-summary.md"
+      }
+    ]
+  }
+}
