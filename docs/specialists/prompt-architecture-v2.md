@@ -169,3 +169,5 @@ That means:
 - the first implementation is intentionally limited to verified path-parity agents only.
 
 Slice A does **not** claim Unity startup/UI generation parity yet.
+
+If regeneration-survival hardening is performed, it should be phrased as **generator-seam verification** around `unity-skill-generate` / `GenerateSkillFiles(...)`, not as proof of full startup/UI wrapper parity.
