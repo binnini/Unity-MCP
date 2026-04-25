@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "handoffId": "windows-validation-p0-2-20260425t012603z",
+  "recordVersion": 2,
+  "state": "draft",
+  "sourceLane": "mac-omx-leader",
+  "targetLane": "windows-codex",
+  "requestedAction": "Run bounded Windows validation smoke (windows_validation_smoke_v1) and submit a windows_lane_evidence_envelope for leader reconcile.",
+  "evidenceRefs": [
+    "log:file:///C:/unity-mcp-agent/logs/windows-validation-p0-2-20260425t012603z-20260425T020818Z-runner.log",
+    "note:file:///C:/unity-mcp-agent/outbox/windows-validation-p0-2-20260425t012603z-20260425T020818Z-summary.md"
+  ],
+  "approverIdentity": null,
+  "approvalVersion": null,
+  "downstreamDispatchTarget": null,
+  "dispatchProvenance": null,
+  "createdAt": "2026-04-25T02:12:59.233Z",
+  "updatedAt": "2026-04-25T02:13:09.783Z",
+  "audit": [
+    {
+      "sequence": 1,
+      "actor": "mac-omx-leader",
+      "action": "created",
+      "toState": "draft",
+      "recordVersion": 1,
+      "createdAt": "2026-04-25T02:12:59.233Z"
+    },
+    {
+      "sequence": 2,
+      "actor": "mac-omx-leader",
+      "action": "evidence_applied",
+      "recordVersion": 2,
+      "createdAt": "2026-04-25T02:13:09.783Z",
+      "notes": "accepted evidence from windows:windows-runner-1 (windows-codex)"
+    }
+  ]
+}
