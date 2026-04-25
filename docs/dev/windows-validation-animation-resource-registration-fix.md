@@ -163,3 +163,20 @@ Unity `6000.3.6f1`媛 ?ㅼ튂???덉쑝硫??꾨옒瑜??ㅽ뻾:
 ## ?묒뾽 醫낅즺 ???④퍡 ?뚮젮以?寃?
 - ?꾩옱 branch 紐⑹쟻 ?鍮??⑥? blocker ??以??붿빟
 - ?ㅼ쓬?쇰줈 Windows?먯꽌 怨꾩냽 吏꾪뻾?댁빞 ??媛???묒? ?ㅼ쓬 ?ㅽ뿕 1~2媛?
+## CI validation addendum (2026-04-25)
+
+Use GitHub Actions run `24923766564` as the official validation evidence for this lane.
+
+- Repository: `binnini/Unity-MCP`
+- Branch: `codex/game-pipeline-specialists-v1`
+- Commit: `a7c8b7d8a6604b4ea6f359feaafc3ca9623dfc66`
+- Official evidence run: `24923766564`
+- Duplicate non-blocking run: `24923772188`
+
+Interpretation:
+- Run `24923766564` completed successfully across the CLI matrix and the Unity validation matrix, including `6000.3.6f1` standalone/editmode on both `base` and `windows-mono`.
+- Run `24923772188` should be treated as duplicate noise for final reporting. Its failure was a Unity license activation flake during `6000.3.6f1` standalone on `base`, not a code regression.
+
+Reporting directive:
+- Cite `24923766564` when describing official CI evidence for the `6000.3.6f1` baseline and the animation resource registration fix.
+- Do not treat `24923772188` as blocking unless the same failure shape reproduces on a fresh non-duplicate run.

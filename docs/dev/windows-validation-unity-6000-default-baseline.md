@@ -67,3 +67,21 @@
 - Success: `default-dev baseline 6000.3.6f1 validated on Windows`
 - Failure: `default-dev baseline 6000.3.6f1 not validated on Windows`
 - Inconclusive: `default-dev baseline 6000.3.6f1 validation inconclusive on Windows`
+## CI validation addendum (2026-04-25)
+
+Use GitHub Actions run `24923766564` as the official baseline-validation evidence.
+
+- Repository: `binnini/Unity-MCP`
+- Branch: `codex/game-pipeline-specialists-v1`
+- Commit: `a7c8b7d8a6604b4ea6f359feaafc3ca9623dfc66`
+- Official evidence run: `24923766564`
+- Duplicate non-blocking run: `24923772188`
+
+Interpretation:
+- Run `24923766564` completed successfully, including the `6000.3.6f1` standalone and editmode jobs on both `base` and `windows-mono`.
+- Run `24923772188` included a duplicate-run failure during Unity license activation (`Two Factor Authentication code has expired`) for `6000.3.6f1` standalone on `base`.
+- That duplicate-run failure should be classified as CI license flakiness, not as a baseline regression.
+
+Reporting directive:
+- Use run `24923766564` for final success evidence.
+- Ignore run `24923772188` for blocker assessment unless the same failure reproduces on a fresh non-duplicate run.
