@@ -544,6 +544,9 @@ That means each active PR/release Unity workflow path currently runs **12 active
 
 # Run tests for a specific Unity version and mode
 .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode editmode
+
+# Run one focused EditMode test by fully-qualified test name / fixture filter
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode editmode -TestFilter "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalTests"
 ```
 
 ## Test modes

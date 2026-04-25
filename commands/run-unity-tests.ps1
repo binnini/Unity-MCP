@@ -14,10 +14,13 @@
     Path to Unity project (default: ./Unity-MCP-Plugin)
 .PARAMETER OutputDir
     Directory for test results and logs (default: ./TestResults)
+.PARAMETER TestFilter
+    Optional Unity Test Runner filter (fully-qualified test name, namespace, fixture, or substring) for EditMode/PlayMode/Standalone runs
 .EXAMPLE
     .\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe"
     .\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode compile
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode
+    .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode -TestFilter "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalTests"
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode all -Verbose
 #>
 
@@ -28,7 +31,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$UnityPath,
     [string]$ProjectPath = "./Unity-MCP-Plugin",
-    [string]$OutputDir = "./commands/TestResults"
+    [string]$OutputDir = "./commands/TestResults",
+    [string]$TestFilter
 )
 
 # ============================================================================
@@ -64,7 +68,8 @@ function Invoke-UnityTest {
         [string]$ProjectPath,
         [string]$TestPlatform,
         [string]$ResultsFile,
-        [string]$LogFile
+        [string]$LogFile,
+        [string]$TestFilter
     )
 
     $testModeName = $TestPlatform
@@ -82,7 +87,14 @@ function Invoke-UnityTest {
         "-GITHUB_ACTIONS", "true"
     )
 
+    if ($TestFilter) {
+        $unityArgs += @("-testFilter", "`"$TestFilter`"")
+    }
+
     Write-Info "Test Platform: $TestPlatform"
+    if ($TestFilter) {
+        Write-Info "Test Filter: $TestFilter"
+    }
     Write-Info "Results: $ResultsFile"
     Write-Info "Log: $LogFile"
     Write-Host ""
@@ -381,6 +393,9 @@ else {
 }
 
 Write-Info "Test Modes: $($testModes -join ', ')"
+if ($TestFilter) {
+    Write-Info "Unity Test Filter: $TestFilter"
+}
 
 # ============================================================================
 # Step 4: Run Tests
@@ -411,7 +426,8 @@ foreach ($mode in $testModes) {
             -ProjectPath $ProjectPath `
             -TestPlatform $mode `
             -ResultsFile $resultsFile `
-            -LogFile $logFile
+            -LogFile $logFile `
+            -TestFilter $TestFilter
     }
 
     $results += $result

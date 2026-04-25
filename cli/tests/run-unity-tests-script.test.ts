@@ -22,4 +22,12 @@ describe('run-unity-tests PowerShell helper', () => {
     expect(script).toContain('"compile" { @("Compile") }');
     expect(script).toContain('ResultKind   = "compile"');
   });
+
+  it('supports forwarding an optional Unity test filter to focused editmode runs', () => {
+    const script = fs.readFileSync(scriptPath, 'utf-8');
+
+    expect(script).toContain('[string]$TestFilter');
+    expect(script).toContain('@("-testFilter", "`"$TestFilter`"")');
+    expect(script).toContain('-TestFilter $TestFilter');
+  });
 });
