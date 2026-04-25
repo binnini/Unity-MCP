@@ -9,6 +9,17 @@ export interface SpecialistContractValidationResult {
   errors: SpecialistContractValidationError[];
 }
 
+export interface AnimatorReviewSessionValidationError {
+  code: string;
+  path: string;
+  message: string;
+}
+
+export interface AnimatorReviewSessionValidationResult {
+  valid: boolean;
+  errors: AnimatorReviewSessionValidationError[];
+}
+
 const REQUIRED_TOP_LEVEL_FIELDS = [
   'id',
   'version',
@@ -60,8 +71,28 @@ const EXECUTABLE_BUS_KEYS = new Set([
   'lifecycleOwner',
 ]);
 
+const REVIEW_SESSION_REQUIRED_STRING_FIELDS = [
+  'sessionId',
+  'specialistId',
+  'status',
+  'intentRestatement',
+  'summary',
+  'focusedQuestion',
+  'riskNote',
+  'updatedAt',
+] as const;
+
 function addError(
   errors: SpecialistContractValidationError[],
+  code: string,
+  path: string,
+  message: string
+): void {
+  errors.push({ code, path, message });
+}
+
+function addReviewSessionError(
+  errors: AnimatorReviewSessionValidationError[],
   code: string,
   path: string,
   message: string
@@ -83,6 +114,14 @@ function isNonEmptyArray(value: unknown): value is unknown[] {
 
 function isWildcard(value: string): boolean {
   return value.includes('*');
+}
+
+function isSafeReviewSessionId(value: unknown): value is string {
+  return (
+    isNonEmptyString(value) &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value) &&
+    !value.includes('..')
+  );
 }
 
 function collectStringValues(value: unknown): string[] {
@@ -466,6 +505,180 @@ export function validateSpecialistContract(input: unknown): SpecialistContractVa
   validateAutonomyRiskPolicy(input, errors);
   validateHandoffHooks(input, errors);
   validateNoExecutableBus(input, errors);
+
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateAnimatorReviewSessionArtifact(input: unknown): AnimatorReviewSessionValidationResult {
+  const errors: AnimatorReviewSessionValidationError[] = [];
+
+  if (!isRecord(input)) {
+    return {
+      valid: false,
+      errors: [{ code: 'INVALID_REVIEW_SESSION', path: '', message: 'Review session artifact must be a JSON object.' }],
+    };
+  }
+
+  for (const field of REVIEW_SESSION_REQUIRED_STRING_FIELDS) {
+    if (!isNonEmptyString(input[field])) {
+      addReviewSessionError(errors, 'MISSING_REVIEW_SESSION_FIELD', field, `${field} must be a non-empty string.`);
+    }
+  }
+
+  if ('sessionId' in input && !isSafeReviewSessionId(input.sessionId)) {
+    addReviewSessionError(
+      errors,
+      'INVALID_SESSION_ID',
+      'sessionId',
+      'sessionId must be a safe filename token using only letters, numbers, dot, underscore, or hyphen.'
+    );
+  }
+
+  if (isNonEmptyString(input.specialistId) && input.specialistId !== 'animator') {
+    addReviewSessionError(
+      errors,
+      'INVALID_SPECIALIST_ID',
+      'specialistId',
+      'Animator review session artifacts must use specialistId === "animator".'
+    );
+  }
+
+  const targetRefs = isNonEmptyArray(input.targetRefs) ? input.targetRefs : [];
+  const targetRefSet = new Set<string>();
+  if (!isNonEmptyArray(input.targetRefs)) {
+    addReviewSessionError(
+      errors,
+      'MISSING_REVIEW_SESSION_FIELD',
+      'targetRefs',
+      'targetRefs must be a non-empty array of target references.'
+    );
+  } else {
+    targetRefs.forEach((targetRef, index) => {
+      if (!isNonEmptyString(targetRef)) {
+        addReviewSessionError(
+          errors,
+          'INVALID_TARGET_REF',
+          `targetRefs[${index}]`,
+          'targetRefs entries must be non-empty strings.'
+        );
+        return;
+      }
+      targetRefSet.add(targetRef);
+    });
+  }
+
+  const evidenceSources = new Set<string>();
+  if (!isNonEmptyArray(input.evidence)) {
+    addReviewSessionError(
+      errors,
+      'MISSING_REVIEW_SESSION_FIELD',
+      'evidence',
+      'evidence must be a non-empty array of evidence items.'
+    );
+  } else {
+    input.evidence.forEach((item, index) => {
+      if (!isRecord(item)) {
+        addReviewSessionError(errors, 'INVALID_EVIDENCE_ITEM', `evidence[${index}]`, 'evidence entries must be objects.');
+        return;
+      }
+
+      if (!isNonEmptyString(item.category)) {
+        addReviewSessionError(
+          errors,
+          'INVALID_EVIDENCE_ITEM',
+          `evidence[${index}].category`,
+          'evidence.category must be a non-empty string.'
+        );
+      } else if (!REQUIRED_EVIDENCE_CATEGORIES.includes(item.category as (typeof REQUIRED_EVIDENCE_CATEGORIES)[number])) {
+        addReviewSessionError(
+          errors,
+          'INVALID_EVIDENCE_CATEGORY',
+          `evidence[${index}].category`,
+          `evidence.category must be one of: ${REQUIRED_EVIDENCE_CATEGORIES.join(', ')}.`
+        );
+      }
+
+      for (const field of ['source', 'summary'] as const) {
+        if (!isNonEmptyString(item[field])) {
+          addReviewSessionError(
+            errors,
+            'INVALID_EVIDENCE_ITEM',
+            `evidence[${index}].${field}`,
+            `evidence.${field} must be a non-empty string.`
+          );
+        }
+      }
+
+      if (isNonEmptyString(item.source)) {
+        evidenceSources.add(item.source);
+      }
+    });
+  }
+
+  if ('feedbackCaptured' in input && input.feedbackCaptured !== undefined && input.feedbackCaptured !== null) {
+    if (!isNonEmptyString(input.feedbackCaptured)) {
+      addReviewSessionError(
+        errors,
+        'INVALID_FEEDBACK_CAPTURED',
+        'feedbackCaptured',
+        'feedbackCaptured must be a non-empty string when present.'
+      );
+    }
+
+    if (!isNonEmptyArray(input.revisionTasks)) {
+      addReviewSessionError(
+        errors,
+        'MISSING_REVISION_TASKS',
+        'revisionTasks',
+        'feedbackCaptured requires at least one derived revision task.'
+      );
+    }
+  }
+
+  if ('revisionTasks' in input && input.revisionTasks !== undefined && input.revisionTasks !== null) {
+    if (!Array.isArray(input.revisionTasks)) {
+      addReviewSessionError(
+        errors,
+        'INVALID_REVISION_TASKS',
+        'revisionTasks',
+        'revisionTasks must be an array when present.'
+      );
+    } else {
+      input.revisionTasks.forEach((task, index) => {
+        if (!isRecord(task)) {
+          addReviewSessionError(
+            errors,
+            'INVALID_REVISION_TASK',
+            `revisionTasks[${index}]`,
+            'revisionTasks entries must be objects.'
+          );
+          return;
+        }
+
+        for (const field of ['id', 'targetRef', 'action', 'acceptance'] as const) {
+          if (!isNonEmptyString(task[field])) {
+            addReviewSessionError(
+              errors,
+              'INVALID_REVISION_TASK',
+              `revisionTasks[${index}].${field}`,
+              `revisionTasks.${field} must be a non-empty string.`
+            );
+          }
+        }
+
+        if (isNonEmptyString(task.targetRef) && !targetRefSet.has(task.targetRef) && !evidenceSources.has(task.targetRef)) {
+          addReviewSessionError(
+            errors,
+            'INVALID_REVISION_LINKAGE',
+            `revisionTasks[${index}].targetRef`,
+            'revisionTasks.targetRef must resolve to a declared targetRef or evidence source from the same review session.'
+          );
+        }
+      });
+    }
+  }
+
+  validateNoExecutableBus(input, errors as SpecialistContractValidationError[]);
 
   return { valid: errors.length === 0, errors };
 }

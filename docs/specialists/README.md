@@ -14,6 +14,18 @@ and MCP client configuration.
 | [`specialist-contract-v1.md`](specialist-contract-v1.md) | Reusable contract template and profile/allowlist rules for all future specialists. |
 | [`migration-roadmap-v1.md`](migration-roadmap-v1.md) | Staged migration from docs/contracts to optional fixtures, Animator resources, draft tools, and future bus work. |
 
+## v2 first-slice planning package
+
+| Document | Purpose |
+| --- | --- |
+| [`architecture-v2.md`](architecture-v2.md) | Parallel v2 boundary model, ownership rules, and first-slice proof target. |
+| [`agent-chat-feedback-protocol-v2.md`](agent-chat-feedback-protocol-v2.md) | Typed review-session artifact and guide-first feedback contract for v2. |
+| [`animator-specialist-v2.md`](animator-specialist-v2.md) | Animator as the only runtime-backed v2 first-slice specialist. |
+| [`specialist-selection-guide-v2.md`](specialist-selection-guide-v2.md) | Selection/routing rules for the first-wave specialist roster. |
+| [`first-wave-catalog-v2.md`](first-wave-catalog-v2.md) | Truthful first-wave roster status: grounded vs guide-level vs deferred. |
+| [`prompt-architecture-v2.md`](prompt-architecture-v2.md) | Guide/output/persona layering and prompt-pack fixture rules for chat + MCP usage. |
+| [`first-wave-prompts-v2.md`](first-wave-prompts-v2.md) | Prompt-pack rollout status for Animator, UI, Sound, and Gameplay. |
+
 ## v1 boundaries
 
 1. **Specialist Contract** — static role/scope/evidence/risk description.

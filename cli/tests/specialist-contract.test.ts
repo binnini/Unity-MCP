@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import {
   CANONICAL_SPECIALIST_CONFIRMATION_TOKENS,
+  validateAnimatorReviewSessionArtifact,
   validateSpecialistContract,
 } from '../src/utils/specialist-contract.js';
 
@@ -233,5 +234,129 @@ describe('specialist contract validator', () => {
 
     expect(Object.keys(result)).toEqual(['valid', 'errors']);
     expect(JSON.stringify(result)).not.toContain('UNITY_MCP_TOOLS');
+  });
+});
+
+describe('animator review session artifact validator', () => {
+  function validReviewSession() {
+    return {
+      sessionId: 'animator-session-001',
+      specialistId: 'animator',
+      status: 'awaiting-feedback',
+      targetRefs: ['animation://controller/Assets%2FCharacters%2FHero.controller'],
+      intentRestatement: 'Tune the locomotion controller to reduce foot sliding.',
+      summary: 'Current blend timings overshoot on the stop transition.',
+      evidence: [
+        {
+          category: 'visual',
+          source: 'screenshot-game-view',
+          summary: 'Stop transition shows visible foot slide on frame 12.',
+        },
+        {
+          category: 'state',
+          source: 'animation://controller/Assets%2FCharacters%2FHero.controller',
+          summary: 'Stop state exits from locomotion with a high transition duration.',
+        },
+      ],
+      focusedQuestion: 'Should the stop transition duration be shortened for the canonical locomotion set?',
+      riskNote: 'Avoid destructive overwrite of the approved controller without confirmation.',
+      updatedAt: '2026-04-25T13:05:00Z',
+    };
+  }
+
+  it('accepts a minimal evidence-linked animator review session artifact', () => {
+    expect(validateAnimatorReviewSessionArtifact(validReviewSession())).toEqual({ valid: true, errors: [] });
+  });
+
+  it('requires canonical animator review session fields', () => {
+    const fixture = validReviewSession();
+    delete fixture.summary;
+
+    const result = validateAnimatorReviewSessionArtifact(fixture);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'MISSING_REVIEW_SESSION_FIELD', path: 'summary' })
+    );
+  });
+
+  it('requires non-empty target refs and bounded evidence items', () => {
+    const emptyTargets = validReviewSession();
+    emptyTargets.targetRefs = [];
+    expect(validateAnimatorReviewSessionArtifact(emptyTargets).errors).toContainEqual(
+      expect.objectContaining({ code: 'MISSING_REVIEW_SESSION_FIELD', path: 'targetRefs' })
+    );
+
+    const invalidEvidence = validReviewSession();
+    invalidEvidence.evidence = [{ category: 'audio', source: '', summary: '' }];
+
+    const result = validateAnimatorReviewSessionArtifact(invalidEvidence);
+    expect(result.valid).toBe(false);
+    expect(result.errors.map(error => error.code)).toContain('INVALID_EVIDENCE_CATEGORY');
+    expect(result.errors.map(error => error.path)).toContain('evidence[0].source');
+    expect(result.errors.map(error => error.path)).toContain('evidence[0].summary');
+  });
+
+  it('requires revision tasks when feedback has been captured', () => {
+    const fixture = validReviewSession();
+    fixture.feedbackCaptured = 'Please tighten the stop pose timing.';
+
+    const result = validateAnimatorReviewSessionArtifact(fixture);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'MISSING_REVISION_TASKS', path: 'revisionTasks' })
+    );
+  });
+
+  it('validates derived revision task fields and specialist identity', () => {
+    const fixture = validReviewSession();
+    fixture.specialistId = 'ui';
+    fixture.feedbackCaptured = 'Reduce foot sliding and keep the same clip set.';
+    fixture.revisionTasks = [{ id: 'rev-1', targetRef: '', action: 'Shorten stop transition.', acceptance: '' }];
+
+    const result = validateAnimatorReviewSessionArtifact(fixture);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_SPECIALIST_ID', path: 'specialistId' })
+    );
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_REVISION_TASK', path: 'revisionTasks[0].targetRef' })
+    );
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_REVISION_TASK', path: 'revisionTasks[0].acceptance' })
+    );
+  });
+
+  it('rejects unsafe session ids and revision targets outside the review context', () => {
+    const fixture = validReviewSession();
+    fixture.sessionId = '../escape';
+    fixture.feedbackCaptured = 'Please keep the approved stop timing but reduce slide.';
+    fixture.revisionTasks = [
+      {
+        id: 'rev-1',
+        targetRef: 'animation://controller/Assets%2FCharacters%2FEnemy.controller',
+        action: 'Retune the stop transition duration.',
+        acceptance: 'Stop transition keeps the approved controller path and removes visible foot slide.',
+      },
+    ];
+
+    const result = validateAnimatorReviewSessionArtifact(fixture);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_SESSION_ID', path: 'sessionId' })
+    );
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_REVISION_LINKAGE', path: 'revisionTasks[0].targetRef' })
+    );
+  });
+
+  it('rejects executable bus fields inside review session artifacts', () => {
+    const fixture = validReviewSession() as Record<string, unknown>;
+    fixture.lifecycleOwner = 'not-allowed';
+
+    const result = validateAnimatorReviewSessionArtifact(fixture);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'EXECUTABLE_BUS_FIELD', path: 'lifecycleOwner' })
+    );
   });
 });

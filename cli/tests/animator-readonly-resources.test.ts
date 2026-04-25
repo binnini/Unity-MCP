@@ -27,7 +27,7 @@ function readResourceTypeSlices(source: string): Array<{ name: string; body: str
 }
 
 describe('Animator read-only resources static contract', () => {
-  it('registers the six Slice 3 resource routes', () => {
+  it('registers the seven Slice 3/v2-first-slice resource routes', () => {
     const source = readResource();
 
     const routes = [
@@ -37,6 +37,7 @@ describe('Animator read-only resources static contract', () => {
       'animation://clip/{path}',
       'animation://character/{id}',
       'review://animation/pending',
+      'review://animation/session/{sessionId}',
     ];
 
     for (const route of routes) {
@@ -45,7 +46,7 @@ describe('Animator read-only resources static contract', () => {
     expect([...source.matchAll(/Route = "([^"]+)"/g)].map((match) => match[1]).sort()).toEqual(
       [...routes].sort()
     );
-    expect(source.match(/\[McpPluginResourceType\]/g)?.length).toBe(6);
+    expect(source.match(/\[McpPluginResourceType\]/g)?.length).toBe(7);
   });
 
   it('keeps one MCP resource entry point per resource type for assembly scanning', () => {
@@ -59,6 +60,7 @@ describe('Animator read-only resources static contract', () => {
       'Resource_AnimationController',
       'Resource_AnimationControllers',
       'Resource_AnimationPendingReviews',
+      'Resource_AnimationReviewSession',
     ]);
 
     for (const match of typeBodies) {
@@ -76,6 +78,7 @@ describe('Animator read-only resources static contract', () => {
       'AnimationClipsAll',
       'AnimationCharactersAll',
       'PendingReviewsAll',
+      'AnimationReviewSessionsAll',
     ];
 
     for (const methodName of requiredListMethods) {
@@ -92,6 +95,22 @@ describe('Animator read-only resources static contract', () => {
     }
 
     for (const field of [
+      'sessionId',
+      'specialistId',
+      'status',
+      'targetRefs',
+      'intentRestatement',
+      'summary',
+      'evidence',
+      'focusedQuestion',
+      'riskNote',
+      'updatedAt',
+      'feedbackCaptured',
+      'revisionTasks',
+      'category',
+      'source',
+      'action',
+      'acceptance',
       'path',
       'name',
       'layerCount',
@@ -116,6 +135,8 @@ describe('Animator read-only resources static contract', () => {
       expect(source).toContain(`JsonPropertyName("${field}")`);
     }
     expect(source).toContain('public ClipListItem[] LinkedClips');
+    expect(source).toContain('public ReviewSessionSummaryItem[] Sessions');
+    expect(source).toContain('public ReviewSessionRevisionTaskItem[] RevisionTasks');
   });
 
   it('keeps the implementation out of tool/setup/runtime projection surfaces', () => {
@@ -156,5 +177,18 @@ describe('Animator read-only resources static contract', () => {
     for (const token of forbidden) {
       expect(source.toLowerCase()).not.toContain(token.toLowerCase());
     }
+  });
+
+  it('bounds review-session file resolution to the animator artifact directory', () => {
+    const source = readResource();
+
+    expect(source).toContain('Path.GetInvalidFileNameChars()');
+    expect(source).toContain('Path.GetFullPath');
+    expect(source).toContain('.omx", "state", "specialists", "review-sessions", "animator"');
+    expect(source).toContain("Path.GetFileNameWithoutExtension(filePath)");
+    expect(source).toContain('ValidateReviewSessionPayload');
+    expect(source).toContain("specialistId 'animator'");
+    expect(source).toContain('AllowedReviewEvidenceCategories');
+    expect(source).toContain("char.IsLetterOrDigit(ch) || ch == '.' || ch == '_' || ch == '-'");
   });
 });

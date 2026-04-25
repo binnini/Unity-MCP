@@ -11,6 +11,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -127,7 +128,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Route = "review://animation/pending",
             MimeType = Consts.MimeType.TextJson,
             ListResources = nameof(PendingReviewsAll),
-            Description = "Return the static read-only pending animation review placeholder for Slice 3."
+            Description = "List read-only Animator review session summaries projected from OMX companion state artifacts."
         )]
         public ResponseResourceContent[] PendingReviews(string uri)
             => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.PendingReviewsPayload));
@@ -136,8 +137,34 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             => MainThread.Instance.Run(AnimationResourceShared.PendingReviewsAll);
     }
 
+    [McpPluginResourceType]
+    public class Resource_AnimationReviewSession
+    {
+        [McpPluginResource
+        (
+            Name = "Animation Review Session by Session Id",
+            Route = "review://animation/session/{sessionId}",
+            MimeType = Consts.MimeType.TextJson,
+            ListResources = nameof(AnimationReviewSessionsAll),
+            Description = "Get a read-only Animator review session projection by session id."
+        )]
+        public ResponseResourceContent[] ReviewSession(string uri, string sessionId)
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.ReviewSessionPayload(sessionId)));
+
+        public ResponseListResource[] AnimationReviewSessionsAll()
+            => MainThread.Instance.Run(AnimationResourceShared.AnimationReviewSessionsAll);
+    }
+
     static class AnimationResourceShared
     {
+        static readonly HashSet<string> AllowedReviewEvidenceCategories = new(StringComparer.Ordinal)
+        {
+            "visual",
+            "state",
+            "validation",
+            "debug"
+        };
+
         static readonly JsonSerializerOptions JsonOptions = new()
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.Never,
@@ -187,6 +214,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             => SingleResource(
                 uri: "review://animation/pending",
                 name: "Pending Animation Review Sessions");
+
+        public static ResponseListResource[] AnimationReviewSessionsAll()
+            => ReadReviewSessionSummaries()
+                .Select(summary => new ResponseListResource(
+                    uri: $"review://animation/session/{Uri.EscapeDataString(summary.SessionId)}",
+                    name: summary.SessionId,
+                    enabled: true,
+                    mimeType: Consts.MimeType.TextJson))
+                .ToArray();
 
         public static ResponseResourceContent[] CreateJsonContent(string uri, object payload)
             => ResponseResourceContent.CreateText(
@@ -323,11 +359,266 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         }
 
         public static ReviewPendingPayload PendingReviewsPayload()
-            => new()
+        {
+            var summaries = ReadReviewSessionSummaries();
+            return new ReviewPendingPayload
             {
-                Sessions = Array.Empty<object>(),
-                Warnings = Array.Empty<string>()
+                Sessions = summaries,
+                Warnings = summaries.Length == 0
+                    ? new[] { "No animator review session artifacts were found under .omx/state/specialists/review-sessions/animator." }
+                    : Array.Empty<string>()
             };
+        }
+
+        public static ReviewSessionPayload ReviewSessionPayload(string encodedSessionId)
+        {
+            var sessionId = Uri.UnescapeDataString(encodedSessionId ?? string.Empty);
+            if (!TryResolveReviewSessionFilePath(sessionId, out var sessionFilePath, out var sessionPathError))
+            {
+                return ReviewSessionPayload.Failure(new ResourceError
+                {
+                    Code = "INVALID_REVIEW_SESSION_ID",
+                    Message = sessionPathError
+                });
+            }
+
+            if (!File.Exists(sessionFilePath))
+            {
+                return ReviewSessionPayload.Failure(new ResourceError
+                {
+                    Code = "REVIEW_SESSION_NOT_FOUND",
+                    Message = $"Animator review session '{sessionId}' was not found under .omx/state/specialists/review-sessions/animator."
+                });
+            }
+
+            try
+            {
+                var payload = JsonSerializer.Deserialize<ReviewSessionPayload>(File.ReadAllText(sessionFilePath), JsonOptions);
+                if (payload == null)
+                {
+                    return ReviewSessionPayload.Failure(new ResourceError
+                    {
+                        Code = "REVIEW_SESSION_INVALID",
+                        Message = $"Animator review session '{sessionId}' could not be parsed."
+                    });
+                }
+
+                if (!ValidateReviewSessionPayload(payload, sessionId, out var validationError))
+                {
+                    return ReviewSessionPayload.Failure(new ResourceError
+                    {
+                        Code = "REVIEW_SESSION_INVALID",
+                        Message = validationError
+                    });
+                }
+
+                payload.SessionId = sessionId;
+                payload.Warnings = payload.Warnings ?? Array.Empty<string>();
+                return payload;
+            }
+            catch (Exception ex)
+            {
+                return ReviewSessionPayload.Failure(new ResourceError
+                {
+                    Code = "REVIEW_SESSION_INVALID",
+                    Message = $"Animator review session '{sessionId}' could not be parsed: {ex.Message}"
+                });
+            }
+        }
+
+        static ReviewSessionSummaryItem[] ReadReviewSessionSummaries()
+        {
+            var rootDirectory = GetReviewSessionRootDirectory();
+            if (string.IsNullOrWhiteSpace(rootDirectory) || !Directory.Exists(rootDirectory))
+                return Array.Empty<ReviewSessionSummaryItem>();
+
+            return Directory.EnumerateFiles(rootDirectory, "*.json", SearchOption.TopDirectoryOnly)
+                .Select(TryReadReviewSessionSummary)
+                .Where(summary => summary != null)
+                .Cast<ReviewSessionSummaryItem>()
+                .OrderBy(summary => summary.UpdatedAt, StringComparer.Ordinal)
+                .ThenBy(summary => summary.SessionId, StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        static ReviewSessionSummaryItem? TryReadReviewSessionSummary(string filePath)
+        {
+            try
+            {
+                var sessionId = Path.GetFileNameWithoutExtension(filePath);
+                if (!IsSafeReviewSessionId(sessionId))
+                    return null;
+
+                var payload = JsonSerializer.Deserialize<ReviewSessionPayload>(File.ReadAllText(filePath), JsonOptions);
+                if (payload == null)
+                    return null;
+
+                if (!ValidateReviewSessionPayload(payload, sessionId, out _))
+                    return null;
+
+                return new ReviewSessionSummaryItem
+                {
+                    SessionId = sessionId,
+                    Status = payload.Status,
+                    Summary = payload.Summary,
+                    FocusedQuestion = payload.FocusedQuestion,
+                    UpdatedAt = payload.UpdatedAt
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        static string GetReviewSessionRootDirectory()
+        {
+            var assetsDirectory = Application.dataPath;
+            if (string.IsNullOrWhiteSpace(assetsDirectory))
+                return string.Empty;
+
+            var projectRoot = Directory.GetParent(assetsDirectory)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRoot))
+                return string.Empty;
+
+            return Path.Combine(projectRoot, ".omx", "state", "specialists", "review-sessions", "animator");
+        }
+
+        static bool TryResolveReviewSessionFilePath(string sessionId, out string filePath, out string errorMessage)
+        {
+            filePath = string.Empty;
+            errorMessage = "review session id must be a URL-escaped session identifier.";
+
+            if (!IsSafeReviewSessionId(sessionId))
+            {
+                errorMessage = "review session id must use only letters, numbers, dot, underscore, or hyphen.";
+                return false;
+            }
+
+            var rootDirectory = GetReviewSessionRootDirectory();
+            if (string.IsNullOrWhiteSpace(rootDirectory))
+            {
+                errorMessage = "Animator review session root directory could not be resolved.";
+                return false;
+            }
+
+            var rootFullPath = Path.GetFullPath(rootDirectory);
+            var candidateFullPath = Path.GetFullPath(Path.Combine(rootFullPath, $"{sessionId}.json"));
+            var boundedRoot = rootFullPath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+                ? rootFullPath
+                : $"{rootFullPath}{Path.DirectorySeparatorChar}";
+
+            if (!candidateFullPath.StartsWith(boundedRoot, StringComparison.Ordinal))
+            {
+                errorMessage = "review session id must stay inside .omx/state/specialists/review-sessions/animator.";
+                return false;
+            }
+
+            filePath = candidateFullPath;
+            return true;
+        }
+
+        static bool IsSafeReviewSessionId(string sessionId)
+            => !string.IsNullOrWhiteSpace(sessionId)
+                && !sessionId.Contains("..", StringComparison.Ordinal)
+                && sessionId.All(ch => char.IsLetterOrDigit(ch) || ch == '.' || ch == '_' || ch == '-')
+                && sessionId.IndexOfAny(Path.GetInvalidFileNameChars()) < 0
+                && sessionId.IndexOf(Path.DirectorySeparatorChar) < 0
+                && sessionId.IndexOf(Path.AltDirectorySeparatorChar) < 0;
+
+        static bool ValidateReviewSessionPayload(ReviewSessionPayload payload, string expectedSessionId, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(payload.SessionId) && !string.Equals(payload.SessionId, expectedSessionId, StringComparison.Ordinal))
+            {
+                errorMessage = $"Animator review session '{expectedSessionId}' must match the persisted sessionId field.";
+                return false;
+            }
+
+            if (!string.Equals(payload.SpecialistId, "animator", StringComparison.Ordinal))
+            {
+                errorMessage = "Animator review session artifacts must use specialistId 'animator'.";
+                return false;
+            }
+
+            foreach (var value in new[]
+            {
+                payload.Status,
+                payload.IntentRestatement,
+                payload.Summary,
+                payload.FocusedQuestion,
+                payload.RiskNote,
+                payload.UpdatedAt
+            })
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    errorMessage = "Animator review session artifacts must keep all required non-empty summary fields.";
+                    return false;
+                }
+            }
+
+            if (payload.TargetRefs == null || payload.TargetRefs.Length == 0 || payload.TargetRefs.Any(string.IsNullOrWhiteSpace))
+            {
+                errorMessage = "Animator review session artifacts must include non-empty targetRefs.";
+                return false;
+            }
+
+            if (payload.Evidence == null || payload.Evidence.Length == 0)
+            {
+                errorMessage = "Animator review session artifacts must include non-empty evidence.";
+                return false;
+            }
+
+            var targetRefs = new HashSet<string>(payload.TargetRefs.Where(value => !string.IsNullOrWhiteSpace(value)), StringComparer.Ordinal);
+            var evidenceSources = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var evidence in payload.Evidence)
+            {
+                if (evidence == null
+                    || string.IsNullOrWhiteSpace(evidence.Category)
+                    || !AllowedReviewEvidenceCategories.Contains(evidence.Category)
+                    || string.IsNullOrWhiteSpace(evidence.Source)
+                    || string.IsNullOrWhiteSpace(evidence.Summary))
+                {
+                    errorMessage = "Animator review session artifacts must include bounded evidence categories and non-empty evidence source/summary fields.";
+                    return false;
+                }
+
+                evidenceSources.Add(evidence.Source);
+            }
+
+            var hasFeedback = !string.IsNullOrWhiteSpace(payload.FeedbackCaptured);
+            if (hasFeedback && (payload.RevisionTasks == null || payload.RevisionTasks.Length == 0))
+            {
+                errorMessage = "Animator review session artifacts with feedbackCaptured must include at least one revision task.";
+                return false;
+            }
+
+            if (payload.RevisionTasks != null)
+            {
+                foreach (var revisionTask in payload.RevisionTasks)
+                {
+                    if (revisionTask == null
+                        || string.IsNullOrWhiteSpace(revisionTask.Id)
+                        || string.IsNullOrWhiteSpace(revisionTask.TargetRef)
+                        || string.IsNullOrWhiteSpace(revisionTask.Action)
+                        || string.IsNullOrWhiteSpace(revisionTask.Acceptance))
+                    {
+                        errorMessage = "Animator review session revision tasks must include non-empty id, targetRef, action, and acceptance fields.";
+                        return false;
+                    }
+
+                    if (!targetRefs.Contains(revisionTask.TargetRef) && !evidenceSources.Contains(revisionTask.TargetRef))
+                    {
+                        errorMessage = "Animator review session revision tasks must resolve to a declared targetRef or evidence source.";
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
 
         static string[] FindAssetPaths(string filter)
             => AssetDatabase.FindAssets(filter)
@@ -667,10 +958,87 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         public class ReviewPendingPayload
         {
             [JsonPropertyName("sessions")]
-            public object[] Sessions { get; set; } = Array.Empty<object>();
+            public ReviewSessionSummaryItem[] Sessions { get; set; } = Array.Empty<ReviewSessionSummaryItem>();
 
             [JsonPropertyName("warnings")]
             public string[] Warnings { get; set; } = Array.Empty<string>();
+        }
+
+        public class ReviewSessionSummaryItem
+        {
+            [JsonPropertyName("sessionId")]
+            public string SessionId { get; set; } = string.Empty;
+            [JsonPropertyName("status")]
+            public string Status { get; set; } = string.Empty;
+            [JsonPropertyName("summary")]
+            public string Summary { get; set; } = string.Empty;
+            [JsonPropertyName("focusedQuestion")]
+            public string FocusedQuestion { get; set; } = string.Empty;
+            [JsonPropertyName("updatedAt")]
+            public string UpdatedAt { get; set; } = string.Empty;
+        }
+
+        public class ReviewSessionEvidenceItem
+        {
+            [JsonPropertyName("category")]
+            public string Category { get; set; } = string.Empty;
+            [JsonPropertyName("source")]
+            public string Source { get; set; } = string.Empty;
+            [JsonPropertyName("summary")]
+            public string Summary { get; set; } = string.Empty;
+        }
+
+        public class ReviewSessionRevisionTaskItem
+        {
+            [JsonPropertyName("id")]
+            public string Id { get; set; } = string.Empty;
+            [JsonPropertyName("targetRef")]
+            public string TargetRef { get; set; } = string.Empty;
+            [JsonPropertyName("action")]
+            public string Action { get; set; } = string.Empty;
+            [JsonPropertyName("acceptance")]
+            public string Acceptance { get; set; } = string.Empty;
+        }
+
+        public class ReviewSessionPayload
+        {
+            [JsonPropertyName("sessionId")]
+            public string SessionId { get; set; } = string.Empty;
+            [JsonPropertyName("specialistId")]
+            public string SpecialistId { get; set; } = string.Empty;
+            [JsonPropertyName("status")]
+            public string Status { get; set; } = string.Empty;
+            [JsonPropertyName("targetRefs")]
+            public string[] TargetRefs { get; set; } = Array.Empty<string>();
+            [JsonPropertyName("intentRestatement")]
+            public string IntentRestatement { get; set; } = string.Empty;
+            [JsonPropertyName("summary")]
+            public string Summary { get; set; } = string.Empty;
+            [JsonPropertyName("evidence")]
+            public ReviewSessionEvidenceItem[] Evidence { get; set; } = Array.Empty<ReviewSessionEvidenceItem>();
+            [JsonPropertyName("focusedQuestion")]
+            public string FocusedQuestion { get; set; } = string.Empty;
+            [JsonPropertyName("riskNote")]
+            public string RiskNote { get; set; } = string.Empty;
+            [JsonPropertyName("updatedAt")]
+            public string UpdatedAt { get; set; } = string.Empty;
+            [JsonPropertyName("feedbackCaptured")]
+            [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            public string? FeedbackCaptured { get; set; }
+            [JsonPropertyName("revisionTasks")]
+            public ReviewSessionRevisionTaskItem[] RevisionTasks { get; set; } = Array.Empty<ReviewSessionRevisionTaskItem>();
+            [JsonPropertyName("warnings")]
+            public string[] Warnings { get; set; } = Array.Empty<string>();
+            [JsonPropertyName("error")]
+            [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            public ResourceError? Error { get; set; }
+
+            public static ReviewSessionPayload Failure(ResourceError error)
+                => new()
+                {
+                    Warnings = new[] { error.Message },
+                    Error = error
+                };
         }
 
         public class ControllerListItem
