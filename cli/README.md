@@ -520,6 +520,19 @@ The Windows lane stays bounded: Unity-MCP still does not own a generic task mail
 
 Windows evidence remains append-only under `.unity-mcp/handoff-spool/windows-evidence/`. Operator-friendly representative status is a derived read-only view over spool history rather than a new authoritative ledger field. The `--summary` view is intentionally spool-history scoped, `submittedAt`-ordered, and non-authoritative: it helps humans see the latest pending/passed/failed/blocked signal without changing reconcile semantics.
 
+Minimal operator flow:
+
+```bash
+# Windows runner side
+unity-mcp-cli handoff submit-windows-evidence ./MyGame --input-file windows-evidence.json
+
+# Any operator visibility check
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1
+
+# mac leader side
+unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --leader-actor mac-omx-leader --handoff-id verification-handoff-1
+```
+
 Artifact ownership remains split:
 
 - authoritative project-local Unity-MCP state lives under `<projectPath>/.unity-mcp/`, especially `handoff-ledger/`, `handoff-spool/windows-evidence/`, and `team-state/`

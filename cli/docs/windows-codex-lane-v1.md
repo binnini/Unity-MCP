@@ -229,6 +229,19 @@ Two operator views matter in practice:
 - either side may inspect append-only spool history with `list-windows-evidence`
 - use `list-windows-evidence --summary` when a human wants the current representative status without mutating the ledger
 
+Example command sequence:
+
+```bash
+# Windows side
+unity-mcp-cli handoff submit-windows-evidence ./MyGame --input-file windows-evidence.json
+
+# Visibility on either side
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1
+
+# mac leader side
+unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --leader-actor mac-omx-leader --handoff-id verification-handoff-1
+```
+
 ### Single-operator view
 
 - one operator may perform the same steps manually across both environments
@@ -236,6 +249,22 @@ Two operator views matter in practice:
   - Windows side may submit
   - leader side reconciles
 - the summary view is read-only convenience, not a shortcut around leader-only reconcile
+
+Example command sequence:
+
+```bash
+# Windows environment
+pwsh -File cli/examples/windows-codex-lane/run-windows-validation-runner-v1.ps1 `
+  -SnapshotPath cli/examples/windows-codex-lane/sample-windows-handoff-snapshot.json `
+  -ProjectPath D:\workSpace\Unity-MCP\Unity-MCP-Plugin `
+  -WorkspacePath D:\workSpace\Unity-MCP
+
+# Either environment for visibility
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary
+
+# Leader-authorized environment
+unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --leader-actor mac-omx-leader
+```
 
 ## Spool layout
 

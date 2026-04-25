@@ -26,6 +26,9 @@ describe('windows codex lane starter artifacts', () => {
     expect(content).toContain('submittedAt`-ordered and spool-history scoped');
     expect(content).toContain('Operator views');
     expect(content).toContain('Single-operator view');
+    expect(content).toContain('Example command sequence:');
+    expect(content).toContain('unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1');
+    expect(content).toContain('pwsh -File cli/examples/windows-codex-lane/run-windows-validation-runner-v1.ps1');
     expect(content).toContain('Companion `outbox/` is not a Unity-MCP queue');
     expect(content).toContain('Artifact ownership and retention');
     expect(content).toContain('<projectPath>/.unity-mcp/handoff-ledger/');
@@ -52,6 +55,8 @@ describe('windows codex lane starter artifacts', () => {
     expect(content).toContain('unity-mcp-cli handoff list-windows-evidence ./MyGame --summary');
     expect(content).toContain('ordered by `submittedAt`');
     expect(content).toContain('Single-operator runbook');
+    expect(content).toContain('Concrete command sequence:');
+    expect(content).toContain('unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --leader-actor mac-omx-leader --handoff-id verification-handoff-1');
     expect(content).toContain('Windows validation hardening / version-matched fixture policy');
     expect(content).toContain('broader implementation-lane execution beyond validation-first smoke');
   });

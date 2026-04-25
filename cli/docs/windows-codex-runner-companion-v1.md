@@ -167,12 +167,43 @@ If the matching handoff ledger record is missing or stale, the summary should st
 3. either operator can inspect raw spool history or the read-only summary
 4. mac leader reconciles when ready
 
+Concrete command sequence:
+
+```bash
+# Windows side
+unity-mcp-cli handoff submit-windows-evidence ./MyGame --input-file windows-evidence.json
+
+# Visibility on either side
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1
+
+# mac leader side
+unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --leader-actor mac-omx-leader --handoff-id verification-handoff-1
+```
+
 ### Single-operator runbook
 
 One operator may perform the same split-lane steps across both environments, but must still preserve the boundary:
 - submit on the Windows side
 - reconcile on the leader side
 - treat `--summary` as visibility only, not as lifecycle authority
+
+Concrete command sequence:
+
+```powershell
+# Windows environment
+pwsh -File cli/examples/windows-codex-lane/run-windows-validation-runner-v1.ps1 `
+  -SnapshotPath cli/examples/windows-codex-lane/sample-windows-handoff-snapshot.json `
+  -ProjectPath D:\workSpace\Unity-MCP\Unity-MCP-Plugin `
+  -WorkspacePath D:\workSpace\Unity-MCP
+```
+
+```bash
+# Visibility
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary
+
+# Leader-authorized environment
+unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --leader-actor mac-omx-leader
+```
 
 ## Recommended bootstrap order
 
