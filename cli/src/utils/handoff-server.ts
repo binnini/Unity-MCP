@@ -10,6 +10,7 @@ import {
   assertDiscordApproverAllowed,
   assertDiscordServeConfig,
   createDiscordEphemeralResponse,
+  getHandoffBridgeCapabilityStatus,
   createDiscordPingResponse,
   createDiscordUpdateResponse,
   type DiscordInteractionRequest,
@@ -51,10 +52,18 @@ export class HandoffServerError extends Error {
   }
 }
 
-export function createHealthResponse(): HandoffHttpResponse {
+export function createHealthResponse(config?: HandoffBridgeConfig): HandoffHttpResponse {
+  const capabilityStatus = config
+    ? getHandoffBridgeCapabilityStatus(config)
+    : {
+        discordNotificationsReady: false,
+        discordInteractionsReady: false,
+      };
+
   return jsonResponse(200, {
     ok: true,
     service: 'unity-mcp-handoff-bridge',
+    capabilityStatus,
   });
 }
 
@@ -74,7 +83,16 @@ export function handleDiscordInteractionRequest(input: {
   timestamp: string | undefined;
   now?: number;
 }): HandoffHttpResponse {
-  const { discordPublicKey } = assertDiscordServeConfig(input.config);
+  let discordPublicKey: string;
+  try {
+    ({ discordPublicKey } = assertDiscordServeConfig(input.config));
+  } catch (err) {
+    if (err instanceof DiscordApprovalError || err instanceof Error) {
+      return jsonResponse(503, { error: err.message });
+    }
+    return jsonResponse(503, { error: 'Discord interactions are not ready.' });
+  }
+
   const verification = verifyDiscordRequest({
     publicKeyHex: discordPublicKey,
     signatureHex: input.signature,
@@ -210,7 +228,7 @@ async function routeRequest(req: http.IncomingMessage, options: HandoffServeOpti
   const url = req.url ?? '/';
 
   if (method === 'GET' && url === '/healthz') {
-    return createHealthResponse();
+    return createHealthResponse(options.config);
   }
 
   if (method === 'POST' && url === '/discord/interactions') {
