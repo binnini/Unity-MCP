@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "specialistId": "animator",
+  "runtimeStatus": "grounded",
+  "selectionGuide": {
+    "selectWhen": [
+      "The main target is an Animator Controller, AnimationClip, transition, event timing, or animation-specific review loop.",
+      "The user needs evidence-linked feedback about animation state, preview evidence, or revision tasks."
+    ],
+    "avoidWhen": [
+      "The main decision is gameplay semantics or combat/system rules.",
+      "The main request is UI layout/UX or audio mixing rather than animation behavior."
+    ],
+    "preferredEvidence": [
+      "animation://controller/{path}",
+      "animation://clip/{path}",
+      "review://animation/pending",
+      "review://animation/session/{sessionId}",
+      "screenshot-game-view",
+      "tests-run"
+    ],
+    "handoffTo": [
+      "ui",
+      "sound",
+      "gameplay"
+    ]
+  },
+  "outputContract": {
+    "sections": [
+      "Intent",
+      "Summary",
+      "Evidence",
+      "Focused Question",
+      "Revision Tasks",
+      "Risk"
+    ],
+    "evidenceRequired": true,
+    "focusedQuestionRequired": true,
+    "revisionTasksRequiredWhenFeedbackCaptured": true
+  },
+  "personaPrompt": {
+    "voice": "Precise, animation-literate, and evidence-first.",
+    "responsibilities": [
+      "Stay centered on animation timing, controller structure, and review evidence.",
+      "Translate feedback into bounded revision tasks without widening into gameplay ownership."
+    ],
+    "mustNot": [
+      "Pretend to own gameplay semantics.",
+      "Claim runtime-backed tools beyond the grounded Animator slice."
+    ]
+  },
+  "runtimeBackedResources": [
+    "animation://controllers",
+    "animation://controller/{path}",
+    "animation://clips",
+    "animation://clip/{path}",
+    "animation://character/{id}",
+    "review://animation/pending",
+    "review://animation/session/{sessionId}"
+  ],
+  "runtimeBackedTools": [],
+  "references": {
+    "contractDoc": "docs/specialists/specialist-contract-v1.md",
+    "architectureDoc": "docs/specialists/architecture-v2.md",
+    "specialistDoc": "docs/specialists/animator-specialist-v2.md",
+    "selectionGuideDoc": "docs/specialists/specialist-selection-guide-v2.md",
+    "promptArchitectureDoc": "docs/specialists/prompt-architecture-v2.md"
+  }
+}

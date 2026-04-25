@@ -35,6 +35,13 @@ Animator review-session routes are read-only projections over companion-owned se
 
 Animator does not gain bus ownership, dispatch control, or promotion/apply execution in this slice.
 
+## Prompt-pack reference
+
+- Prompt pack: `cli/examples/specialists/v2/animator.prompt-pack.v2.json`
+- Shared contract baseline: `docs/specialists/specialist-contract-v1.md`
+- Shared prompt architecture: `docs/specialists/prompt-architecture-v2.md`
+- Shared selection guide: `docs/specialists/specialist-selection-guide-v2.md`
+
 ## Selection guidance summary
 Use Animator when:
 - the main target is animation timing, transitions, clips, controller state, animation evidence, or animation-specific review/revision questions.

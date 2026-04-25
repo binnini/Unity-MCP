@@ -7,6 +7,7 @@ import { validateSpecialistPromptPack } from '../src/utils/specialist-prompt-pac
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
 const fixturesDir = path.join(repoRoot, 'cli/examples/specialists/v2');
+const registryPath = path.join(fixturesDir, 'first-wave-prompt-registry.v2.json');
 
 function loadFixture(name: string) {
   return JSON.parse(fs.readFileSync(path.join(fixturesDir, name), 'utf-8')) as Record<string, any>;
@@ -34,6 +35,17 @@ describe('specialist prompt pack validator', () => {
     );
     expect(result.errors).toContainEqual(
       expect.objectContaining({ code: 'MISSING_OUTPUT_SECTION', path: 'outputContract.sections' })
+    );
+  });
+
+  it('requires prompt packs to reference the shared contract and specialist docs', () => {
+    const fixture = loadFixture('animator.prompt-pack.v2.json');
+    delete fixture.references.specialistDoc;
+
+    const result = validateSpecialistPromptPack(fixture);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_REFERENCE_FIELD', path: 'references.specialistDoc' })
     );
   });
 
@@ -77,5 +89,33 @@ describe('specialist prompt pack validator', () => {
     expect(result.errors).toContainEqual(
       expect.objectContaining({ code: 'INVALID_ARRAY_ITEM', path: 'personaPrompt.mustNot[0]' })
     );
+  });
+});
+
+describe('first-wave prompt registry', () => {
+  it('keeps the registry aligned with prompt-pack fixtures and docs', () => {
+    const registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8')) as {
+      version: number;
+      specialists: Array<Record<string, string>>;
+    };
+
+    expect(registry.version).toBe(2);
+    expect(registry.specialists).toHaveLength(4);
+
+    for (const entry of registry.specialists) {
+      const packPath = path.join(repoRoot, entry.promptPack);
+      const docPath = path.join(repoRoot, entry.specialistDoc);
+      expect(fs.existsSync(packPath)).toBe(true);
+      expect(fs.existsSync(docPath)).toBe(true);
+
+      const pack = JSON.parse(fs.readFileSync(packPath, 'utf-8')) as Record<string, any>;
+      expect(pack.specialistId).toBe(entry.specialistId);
+      expect(pack.runtimeStatus).toBe(entry.runtimeStatus);
+      expect(pack.references.specialistDoc).toBe(entry.specialistDoc);
+      expect(fs.existsSync(path.join(repoRoot, pack.references.contractDoc))).toBe(true);
+      expect(fs.existsSync(path.join(repoRoot, pack.references.architectureDoc))).toBe(true);
+      expect(fs.existsSync(path.join(repoRoot, pack.references.selectionGuideDoc))).toBe(true);
+      expect(fs.existsSync(path.join(repoRoot, pack.references.promptArchitectureDoc))).toBe(true);
+    }
   });
 });

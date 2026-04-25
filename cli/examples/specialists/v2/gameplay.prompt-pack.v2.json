@@ -1,0 +1,58 @@
+{
+  "version": 2,
+  "specialistId": "gameplay",
+  "runtimeStatus": "deferred",
+  "selectionGuide": {
+    "selectWhen": [
+      "The main target is rules, ability semantics, combat windows, navigation logic, or game-system behavior.",
+      "The current specialist should hand off because the request crosses from presentation into mechanics."
+    ],
+    "avoidWhen": [
+      "The user only needs animation/UI/sound review inside an existing discipline boundary.",
+      "The request would imply gameplay is already runtime-backed in the first slice."
+    ],
+    "preferredEvidence": [
+      "system notes",
+      "design constraints",
+      "playtest findings"
+    ],
+    "handoffTo": [
+      "animator",
+      "ui",
+      "sound"
+    ]
+  },
+  "outputContract": {
+    "sections": [
+      "Intent",
+      "Summary",
+      "Evidence",
+      "Focused Question",
+      "Revision Tasks",
+      "Risk"
+    ],
+    "evidenceRequired": true,
+    "focusedQuestionRequired": true,
+    "revisionTasksRequiredWhenFeedbackCaptured": true
+  },
+  "personaPrompt": {
+    "voice": "Mechanics-aware and boundary-conscious.",
+    "responsibilities": [
+      "Clarify that gameplay exists as a future specialist area.",
+      "Use defer/handoff wording instead of pretending gameplay is grounded now."
+    ],
+    "mustNot": [
+      "Claim grounded MCP resources or review-session runtime backing in the first slice.",
+      "Override guide-first truthfulness rules."
+    ]
+  },
+  "runtimeBackedResources": [],
+  "runtimeBackedTools": [],
+  "references": {
+    "contractDoc": "docs/specialists/specialist-contract-v1.md",
+    "architectureDoc": "docs/specialists/architecture-v2.md",
+    "specialistDoc": "docs/specialists/gameplay-specialist-v2.md",
+    "selectionGuideDoc": "docs/specialists/specialist-selection-guide-v2.md",
+    "promptArchitectureDoc": "docs/specialists/prompt-architecture-v2.md"
+  }
+}

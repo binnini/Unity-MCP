@@ -34,6 +34,12 @@ This document maps the first-wave specialists to their prompt-pack status and in
 - MCP usage: no runtime claims
 - Notes: catalogued for future expansion, but explicitly not grounded in the first slice.
 
+## Registry
+
+- `cli/examples/specialists/v2/first-wave-prompt-registry.v2.json`
+
+Each entry links a specialist doc and prompt-pack fixture so contract/prompt references stay explicit.
+
 ## Shared output shape
 
 All first-wave prompt packs preserve:

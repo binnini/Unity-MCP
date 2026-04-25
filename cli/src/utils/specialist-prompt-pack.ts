@@ -13,6 +13,7 @@ type RuntimeStatus = 'grounded' | 'guide-level' | 'deferred';
 
 const ALLOWED_RUNTIME_STATUSES = new Set<RuntimeStatus>(['grounded', 'guide-level', 'deferred']);
 const REQUIRED_OUTPUT_SECTIONS = ['Intent', 'Summary', 'Evidence', 'Focused Question', 'Revision Tasks', 'Risk'] as const;
+const REQUIRED_REFERENCE_FIELDS = ['contractDoc', 'architectureDoc', 'specialistDoc', 'selectionGuideDoc', 'promptArchitectureDoc'] as const;
 
 function addError(
   errors: SpecialistPromptPackValidationError[],
@@ -116,6 +117,16 @@ export function validateSpecialistPromptPack(input: unknown): SpecialistPromptPa
           `outputContract.${field}`,
           `${field} must be true for first-wave v2 prompt packs.`
         );
+      }
+    }
+  }
+
+  if (!isRecord(input.references)) {
+    addError(errors, 'INVALID_REFERENCES', 'references', 'references must be an object.');
+  } else {
+    for (const field of REQUIRED_REFERENCE_FIELDS) {
+      if (!isNonEmptyString(input.references[field])) {
+        addError(errors, 'INVALID_REFERENCE_FIELD', `references.${field}`, `references.${field} must be a non-empty string.`);
       }
     }
   }

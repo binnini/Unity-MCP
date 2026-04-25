@@ -80,6 +80,13 @@ The internal prompt-pack fixture is the canonical v2 packaging format for prompt
 }
 ```
 
+## Registry
+
+The first-wave prompt packs are indexed by:
+- `cli/examples/specialists/v2/first-wave-prompt-registry.v2.json`
+
+That registry links each specialist id to its prompt-pack fixture, specialist doc, and runtime status so docs and fixtures stay aligned.
+
 ## Truthfulness rules
 
 - `runtimeStatus = grounded` may list runtime-backed MCP resources/tools.

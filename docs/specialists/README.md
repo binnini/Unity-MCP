@@ -25,6 +25,10 @@ and MCP client configuration.
 | [`first-wave-catalog-v2.md`](first-wave-catalog-v2.md) | Truthful first-wave roster status: grounded vs guide-level vs deferred. |
 | [`prompt-architecture-v2.md`](prompt-architecture-v2.md) | Guide/output/persona layering and prompt-pack fixture rules for chat + MCP usage. |
 | [`first-wave-prompts-v2.md`](first-wave-prompts-v2.md) | Prompt-pack rollout status for Animator, UI, Sound, and Gameplay. |
+| `cli/examples/specialists/v2/first-wave-prompt-registry.v2.json` | Internal registry linking first-wave prompt packs to specialist docs/runtime status. |
+| [`ui-specialist-v2.md`](ui-specialist-v2.md) | Guide-level UI specialist definition and prompt-pack linkage. |
+| [`sound-specialist-v2.md`](sound-specialist-v2.md) | Guide-level Sound specialist definition and prompt-pack linkage. |
+| [`gameplay-specialist-v2.md`](gameplay-specialist-v2.md) | Deferred Gameplay specialist definition and prompt-pack linkage. |
 
 ## v1 boundaries
 

@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "specialists": [
+    {
+      "specialistId": "animator",
+      "promptPack": "cli/examples/specialists/v2/animator.prompt-pack.v2.json",
+      "specialistDoc": "docs/specialists/animator-specialist-v2.md",
+      "runtimeStatus": "grounded"
+    },
+    {
+      "specialistId": "ui",
+      "promptPack": "cli/examples/specialists/v2/ui.prompt-pack.v2.json",
+      "specialistDoc": "docs/specialists/ui-specialist-v2.md",
+      "runtimeStatus": "guide-level"
+    },
+    {
+      "specialistId": "sound",
+      "promptPack": "cli/examples/specialists/v2/sound.prompt-pack.v2.json",
+      "specialistDoc": "docs/specialists/sound-specialist-v2.md",
+      "runtimeStatus": "guide-level"
+    },
+    {
+      "specialistId": "gameplay",
+      "promptPack": "cli/examples/specialists/v2/gameplay.prompt-pack.v2.json",
+      "specialistDoc": "docs/specialists/gameplay-specialist-v2.md",
+      "runtimeStatus": "deferred"
+    }
+  ]
+}
