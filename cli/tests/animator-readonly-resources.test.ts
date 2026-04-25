@@ -33,7 +33,26 @@ describe('Animator read-only resources static contract', () => {
     expect([...source.matchAll(/Route = "([^"]+)"/g)].map((match) => match[1]).sort()).toEqual(
       [...routes].sort()
     );
-    expect(source).toContain('[McpPluginResourceType]');
+    expect(source.match(/\[McpPluginResourceType\]/g)?.length).toBe(6);
+  });
+
+  it('keeps one MCP resource entry point per resource type for assembly scanning', () => {
+    const source = readResource();
+    const typeBodies = [...source.matchAll(/\[McpPluginResourceType\][\s\S]*?public class (Resource_[A-Za-z0-9_]+)[\s\S]*?\n    }\n/g)];
+
+    expect(typeBodies.map((match) => match[1]).sort()).toEqual([
+      'Resource_AnimationCharacter',
+      'Resource_AnimationClip',
+      'Resource_AnimationClips',
+      'Resource_AnimationController',
+      'Resource_AnimationControllers',
+      'Resource_AnimationPendingReviews',
+    ]);
+
+    for (const match of typeBodies) {
+      const body = match[0];
+      expect(body.match(/\[McpPluginResource\s/g)?.length).toBe(1);
+    }
   });
 
   it('declares deterministic envelope and route schema fields', () => {

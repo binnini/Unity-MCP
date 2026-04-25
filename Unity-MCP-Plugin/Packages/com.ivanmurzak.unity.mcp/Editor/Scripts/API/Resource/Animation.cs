@@ -29,25 +29,22 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
     using Consts = McpPlugin.Common.Consts;
 
     [McpPluginResourceType]
-    public partial class Resource_Animation
+    public class Resource_AnimationControllers
     {
-        static readonly JsonSerializerOptions JsonOptions = new()
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.Never,
-            WriteIndented = false
-        };
-
         [McpPluginResource
         (
             Name = "Animation Controllers",
             Route = "animation://controllers",
             MimeType = Consts.MimeType.TextJson,
-            ListResources = nameof(AnimationControllersAll),
             Description = "List Animator Controller assets with compact read-only summary data."
         )]
         public ResponseResourceContent[] Controllers(string uri)
-            => CreateJsonContent(uri, MainThread.Instance.Run(() => ListControllersPayload()));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.ListControllersPayload));
+    }
 
+    [McpPluginResourceType]
+    public class Resource_AnimationController
+    {
         [McpPluginResource
         (
             Name = "Animation Controller by Path",
@@ -57,19 +54,29 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Description = "Get a read-only Animator Controller summary by URL-escaped AssetDatabase path."
         )]
         public ResponseResourceContent[] Controller(string uri, string path)
-            => CreateJsonContent(uri, MainThread.Instance.Run(() => ControllerPayload(path)));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.ControllerPayload(path)));
 
+        public ResponseListResource[] AnimationControllersAll()
+            => MainThread.Instance.Run(AnimationResourceShared.AnimationControllersAll);
+    }
+
+    [McpPluginResourceType]
+    public class Resource_AnimationClips
+    {
         [McpPluginResource
         (
             Name = "Animation Clips",
             Route = "animation://clips",
             MimeType = Consts.MimeType.TextJson,
-            ListResources = nameof(AnimationClipsAll),
             Description = "List AnimationClip assets with compact read-only summary data."
         )]
         public ResponseResourceContent[] Clips(string uri)
-            => CreateJsonContent(uri, MainThread.Instance.Run(() => ListClipsPayload()));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.ListClipsPayload));
+    }
 
+    [McpPluginResourceType]
+    public class Resource_AnimationClip
+    {
         [McpPluginResource
         (
             Name = "Animation Clip by Path",
@@ -79,8 +86,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Description = "Get a read-only AnimationClip summary by URL-escaped AssetDatabase path."
         )]
         public ResponseResourceContent[] Clip(string uri, string path)
-            => CreateJsonContent(uri, MainThread.Instance.Run(() => ClipPayload(path)));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.ClipPayload(path)));
 
+        public ResponseListResource[] AnimationClipsAll()
+            => MainThread.Instance.Run(AnimationResourceShared.AnimationClipsAll);
+    }
+
+    [McpPluginResourceType]
+    public class Resource_AnimationCharacter
+    {
         [McpPluginResource
         (
             Name = "Animation Character by Current Scene Path",
@@ -89,8 +103,12 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Description = "Get a read-only Animator binding summary by URL-escaped current-scene GameObject path."
         )]
         public ResponseResourceContent[] Character(string uri, string id)
-            => CreateJsonContent(uri, MainThread.Instance.Run(() => CharacterPayload(id)));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.CharacterPayload(id)));
+    }
 
+    [McpPluginResourceType]
+    public class Resource_AnimationPendingReviews
+    {
         [McpPluginResource
         (
             Name = "Pending Animation Review Sessions",
@@ -99,43 +117,52 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Description = "Return the static read-only pending animation review placeholder for Slice 3."
         )]
         public ResponseResourceContent[] PendingReviews(string uri)
-            => CreateJsonContent(uri, MainThread.Instance.Run(PendingReviewsPayload));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(AnimationResourceShared.PendingReviewsPayload));
+    }
 
-        public ResponseListResource[] AnimationControllersAll() => MainThread.Instance.Run(() =>
-            FindAssetPaths("t:AnimatorController")
+    static class AnimationResourceShared
+    {
+        static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+            WriteIndented = false
+        };
+
+        public static ResponseListResource[] AnimationControllersAll()
+            => FindAssetPaths("t:AnimatorController")
                 .Select(path => new ResponseListResource(
                     uri: $"animation://controller/{Uri.EscapeDataString(path)}",
                     name: System.IO.Path.GetFileNameWithoutExtension(path),
                     enabled: true,
                     mimeType: Consts.MimeType.TextJson))
-                .ToArray());
+                .ToArray();
 
-        public ResponseListResource[] AnimationClipsAll() => MainThread.Instance.Run(() =>
-            FindAssetPaths("t:AnimationClip")
+        public static ResponseListResource[] AnimationClipsAll()
+            => FindAssetPaths("t:AnimationClip")
                 .Select(path => new ResponseListResource(
                     uri: $"animation://clip/{Uri.EscapeDataString(path)}",
                     name: System.IO.Path.GetFileNameWithoutExtension(path),
                     enabled: true,
                     mimeType: Consts.MimeType.TextJson))
-                .ToArray());
+                .ToArray();
 
-        static ResponseResourceContent[] CreateJsonContent(string uri, object payload)
+        public static ResponseResourceContent[] CreateJsonContent(string uri, object payload)
             => ResponseResourceContent.CreateText(
                 uri: uri,
                 mimeType: Consts.MimeType.TextJson,
                 text: JsonSerializer.Serialize(payload, JsonOptions)
             ).MakeArray();
 
-        static ListPayload<ControllerListItem> ListControllersPayload()
+        public static ListPayload<ControllerListItem> ListControllersPayload()
             => new()
             {
                 Items = FindAssetPaths("t:AnimatorController")
-                    .Select(path => SummarizeControllerListItem(path))
+                    .Select(SummarizeControllerListItem)
                     .ToArray(),
                 Warnings = Array.Empty<string>()
             };
 
-        static DetailPayload<ControllerDetailItem> ControllerPayload(string encodedPath)
+        public static DetailPayload<ControllerDetailItem> ControllerPayload(string encodedPath)
         {
             var (path, error) = DecodeAssetPath(encodedPath, "INVALID_CONTROLLER_PATH");
             if (error != null)
@@ -159,16 +186,16 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             };
         }
 
-        static ListPayload<ClipListItem> ListClipsPayload()
+        public static ListPayload<ClipListItem> ListClipsPayload()
             => new()
             {
                 Items = FindAssetPaths("t:AnimationClip")
-                    .Select(path => SummarizeClipListItem(path))
+                    .Select(SummarizeClipListItem)
                     .ToArray(),
                 Warnings = Array.Empty<string>()
             };
 
-        static DetailPayload<ClipDetailItem> ClipPayload(string encodedPath)
+        public static DetailPayload<ClipDetailItem> ClipPayload(string encodedPath)
         {
             var (path, error) = DecodeAssetPath(encodedPath, "INVALID_CLIP_PATH");
             if (error != null)
@@ -192,7 +219,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             };
         }
 
-        static DetailPayload<CharacterDetailItem> CharacterPayload(string encodedId)
+        public static DetailPayload<CharacterDetailItem> CharacterPayload(string encodedId)
         {
             var id = Uri.UnescapeDataString(encodedId ?? string.Empty);
             if (string.IsNullOrWhiteSpace(id))
@@ -243,7 +270,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             };
         }
 
-        static ReviewPendingPayload PendingReviewsPayload()
+        public static ReviewPendingPayload PendingReviewsPayload()
             => new()
             {
                 Sessions = Array.Empty<object>(),
