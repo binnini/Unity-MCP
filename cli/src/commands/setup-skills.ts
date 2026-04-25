@@ -6,6 +6,10 @@ import { resolveAndValidateProjectPath, resolveConnection } from '../utils/conne
 import { getAgentById, getAgentIds, listAgentTable } from '../utils/agents.js';
 import { readConfig, isCloudMode } from '../utils/config.js';
 import { runCloudLogin } from '../utils/cloud-login.js';
+import {
+  materializeSpecialistOrchestrationSkill,
+  shouldGenerateSpecialistOrchestrationSkill,
+} from '../utils/specialist-orchestration-skill.js';
 
 interface SetupSkillsOptions {
   url?: string;
@@ -180,6 +184,10 @@ export const setupSkillsCommand = new Command('setup-skills')
             }
           }
           process.exit(1);
+        }
+
+        if (shouldGenerateSpecialistOrchestrationSkill(agent.id)) {
+          materializeSpecialistOrchestrationSkill({ skillsPath });
         }
 
         spinner.success(`Skills generated for ${agent.name}`);

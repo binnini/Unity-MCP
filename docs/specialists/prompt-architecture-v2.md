@@ -156,3 +156,16 @@ The first-wave prompt packs are:
 - UI: guide-level
 - Sound: guide-level
 - Gameplay: deferred
+
+## Slice A integration boundary
+
+Slice A wires these prompt packs into one real orchestration path through `unity-mcp-cli setup-skills`, but only as a **CLI-owned temporary artifact**.
+
+That means:
+- no new public CLI command is added,
+- `/api/system-tools/unity-skill-generate` stays unchanged,
+- Unity-side skill generation remains the canonical generator seam,
+- the CLI may append one owned specialists-v2 orchestration artifact after successful skill generation,
+- the first implementation is intentionally limited to verified path-parity agents only.
+
+Slice A does **not** claim Unity startup/UI generation parity yet.

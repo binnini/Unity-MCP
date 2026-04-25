@@ -8,6 +8,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { runCliAsync } from './helpers/cli.js';
+import {
+  SPECIALIST_ORCHESTRATION_ARTIFACT_RELATIVE_PATH,
+  SPECIALIST_ORCHESTRATION_OWNERSHIP_MARKER,
+} from '../src/utils/specialist-orchestration-skill.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -159,6 +163,76 @@ describe('setup-skills command', () => {
 
       expect(method).toBe('POST');
       expect(url).toBe('/api/system-tools/unity-skill-generate');
+    }, 15000);
+
+    it('materializes the CLI-owned specialists v2 orchestration artifact for supported agents only', async () => {
+      const serverUrl = `http://127.0.0.1:${captureServer.port}`;
+      const pluginOwnedPath = path.join(tmpDir, '.claude', 'skills', 'unity-generator-owned', 'SKILL.md');
+      fs.mkdirSync(path.dirname(pluginOwnedPath), { recursive: true });
+      fs.writeFileSync(pluginOwnedPath, 'plugin generated skill\n', 'utf-8');
+
+      const [{ body }, { exitCode }] = await Promise.all([
+        captureServer.waitForRequest(),
+        runCliAsync(['setup-skills', 'claude-code', tmpDir, '--url', serverUrl]),
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect((body as Record<string, string>).path).toBe('.claude/skills');
+
+      const artifactPath = path.join(tmpDir, '.claude', 'skills', SPECIALIST_ORCHESTRATION_ARTIFACT_RELATIVE_PATH);
+      expect(fs.existsSync(artifactPath)).toBe(true);
+      expect(fs.readFileSync(artifactPath, 'utf-8')).toContain(SPECIALIST_ORCHESTRATION_OWNERSHIP_MARKER);
+      expect(fs.readFileSync(pluginOwnedPath, 'utf-8')).toBe('plugin generated skill\n');
+
+      const first = fs.readFileSync(artifactPath, 'utf-8');
+      const secondServer = await startCaptureServer();
+      try {
+        const secondUrl = `http://127.0.0.1:${secondServer.port}`;
+        const [, secondRun] = await Promise.all([
+          secondServer.waitForRequest(),
+          runCliAsync(['setup-skills', 'claude-code', tmpDir, '--url', secondUrl]),
+        ]);
+
+        expect(secondRun.exitCode).toBe(0);
+        expect(fs.readFileSync(artifactPath, 'utf-8')).toBe(first);
+      } finally {
+        await secondServer.close();
+      }
+    }, 15000);
+
+    it('keeps baseline setup-skills behavior for excluded non-parity agents', async () => {
+      const serverUrl = `http://127.0.0.1:${captureServer.port}`;
+      const [{ body }, { exitCode }] = await Promise.all([
+        captureServer.waitForRequest(),
+        runCliAsync(['setup-skills', 'vscode-copilot', tmpDir, '--url', serverUrl]),
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect((body as Record<string, string>).path).toBe('.github/skills');
+      const artifactPath = path.join(tmpDir, '.github', 'skills', SPECIALIST_ORCHESTRATION_ARTIFACT_RELATIVE_PATH);
+      expect(fs.existsSync(artifactPath)).toBe(false);
+    }, 15000);
+
+    it('fails closed when orchestration rendering cannot load the registry', async () => {
+      const serverUrl = `http://127.0.0.1:${captureServer.port}`;
+      const artifactPath = path.join(tmpDir, '.claude', 'skills', SPECIALIST_ORCHESTRATION_ARTIFACT_RELATIVE_PATH);
+
+      const [{ body }, { stdout, exitCode }] = await Promise.all([
+        captureServer.waitForRequest(),
+        runCliAsync(
+          ['setup-skills', 'claude-code', tmpDir, '--url', serverUrl],
+          {
+            env: {
+              UNITY_MCP_SPECIALIST_PROMPT_REGISTRY_PATH: path.join(tmpDir, 'missing-registry.json'),
+            },
+          },
+        ),
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect((body as Record<string, string>).path).toBe('.claude/skills');
+      expect(stdout).toContain('Failed to generate skills');
+      expect(fs.existsSync(artifactPath)).toBe(false);
     }, 15000);
   });
 });
