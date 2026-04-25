@@ -119,4 +119,54 @@ describe('handoff command surface', () => {
     expect(list.stdout).toContain('blocked');
     expect(list.stdout).toContain('pending');
   });
+
+  it('shows a derived read-only summary for Windows evidence history', async () => {
+    const projectPath = makeProject();
+    const writer = createLeaderWriter('mac-omx-leader');
+    writeHandoffRecord(projectPath, writer, createHandoffRecord({
+      handoffId: 'handoff-3',
+      sourceLane: 'windows-codex',
+      targetLane: 'mac-omx-leader',
+      requestedAction: 'verification -> CI/CD',
+      createdBy: writer,
+    }));
+
+    const evidencePath = path.join(projectPath, 'windows-evidence-summary.json');
+    fs.writeFileSync(evidencePath, JSON.stringify({
+      schemaVersion: 1,
+      kind: 'windows_lane_evidence_envelope',
+      handoffId: 'handoff-3',
+      handoffVersion: 1,
+      sourceLane: {
+        kind: 'windows_codex',
+        laneId: 'windows-runner-3',
+      },
+      submittedAt: '2026-04-24T00:00:00.000Z',
+      outcome: 'passed',
+      summary: 'Summary evidence',
+      evidenceRefs: [
+        {
+          type: 'note',
+          uri: 'file:///tmp/windows-evidence-summary.txt',
+        },
+      ],
+    }, null, 2));
+
+    await runCliAsync(['handoff', 'submit-windows-evidence', '--path', projectPath, '--input-file', evidencePath]);
+    const list = await runCliAsync(['handoff', 'list-windows-evidence', '--path', projectPath, '--summary', '--handoff-id', 'handoff-3']);
+    expect(list.exitCode).toBe(0);
+    expect(list.stdout).toContain('Unity-MCP Windows Evidence Summary');
+    expect(list.stdout).toContain('derived summary');
+    expect(list.stdout).toContain('handoff-3@1');
+    expect(list.stdout).toContain('pending_reconcile');
+    expect(list.stdout).toContain('queue:pending');
+  });
+
+  it('prints a deterministic no-history message in summary mode', async () => {
+    const projectPath = makeProject();
+
+    const list = await runCliAsync(['handoff', 'list-windows-evidence', '--path', projectPath, '--summary', '--handoff-id', 'missing-handoff']);
+    expect(list.exitCode).toBe(0);
+    expect(list.stdout).toContain('No Windows evidence history found for handoff: missing-handoff');
+  });
 });

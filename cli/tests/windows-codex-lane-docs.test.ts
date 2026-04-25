@@ -21,6 +21,11 @@ describe('windows codex lane starter artifacts', () => {
     expect(content).toContain('passive snapshot -> external runner -> evidence envelope -> `submit-windows-evidence` -> `reconcile-windows-evidence`');
     expect(content).toContain('windows_validation_smoke_v1');
     expect(content).toContain('The runner stops here. It does **not** poll Unity-MCP with `list-windows-evidence`');
+    expect(content).toContain('Inspect append-only evidence safely');
+    expect(content).toContain('unity-mcp-cli handoff list-windows-evidence ./MyGame --summary');
+    expect(content).toContain('submittedAt`-ordered and spool-history scoped');
+    expect(content).toContain('Operator views');
+    expect(content).toContain('Single-operator view');
     expect(content).toContain('Companion `outbox/` is not a Unity-MCP queue');
     expect(content).toContain('Artifact ownership and retention');
     expect(content).toContain('<projectPath>/.unity-mcp/handoff-ledger/');
@@ -42,6 +47,11 @@ describe('windows codex lane starter artifacts', () => {
     expect(content).toContain('Under `<projectPath>/.unity-mcp/`, these paths remain repo-owned state');
     expect(content).toContain('do not commit them by default unless they are being intentionally curated as fixtures or explicit verification proof');
     expect(content).toContain('Do **not** call `handoff list-windows-evidence` as a runner polling loop.');
+    expect(content).toContain('read-only `--summary` derived view');
+    expect(content).toContain('Append-only evidence policy');
+    expect(content).toContain('unity-mcp-cli handoff list-windows-evidence ./MyGame --summary');
+    expect(content).toContain('ordered by `submittedAt`');
+    expect(content).toContain('Single-operator runbook');
     expect(content).toContain('Windows validation hardening / version-matched fixture policy');
     expect(content).toContain('broader implementation-lane execution beyond validation-first smoke');
   });

@@ -148,6 +148,21 @@ Optional handoff scoping:
 unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --handoff-id verification-handoff-1
 ```
 
+### 5. Inspect append-only evidence safely
+
+Operators may inspect the raw spool or a derived summary view without editing `.unity-mcp/handoff-spool/windows-evidence/` manually.
+
+```bash
+unity-mcp-cli handoff list-windows-evidence ./MyGame
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1
+```
+
+- default output shows raw append-only spool history
+- `--summary` shows a read-only representative view derived from spool history
+- the representative view is `submittedAt`-ordered and spool-history scoped; it does **not** create a new authoritative ledger state
+- missing or stale ledger records do not invalidate the summary view; they are surfaced as notes instead
+
 ## Validation-first v1 profile
 
 The external runner's named v1 profile is `windows_validation_smoke_v1`.
@@ -202,6 +217,25 @@ These artifacts are useful for debugging and replay, but they are not canonical 
 - preserve authoritative `<projectPath>/.unity-mcp/...` state according to Unity-MCP lifecycle needs
 - keep companion-local logs/outbox/snapshots only as long as operators need them for replay or debugging
 - commit proof artifacts only when they are intentionally curated as fixtures or explicit verification evidence, not as default runtime residue
+
+## Operator views
+
+Two operator views matter in practice:
+
+### Split-lane view (mac leader + Windows runner)
+
+- Windows runner reads a passive snapshot, runs bounded validation, calls `submit-windows-evidence`, and stops
+- mac leader (or another leader-authorized operator) uses `reconcile-windows-evidence` later
+- either side may inspect append-only spool history with `list-windows-evidence`
+- use `list-windows-evidence --summary` when a human wants the current representative status without mutating the ledger
+
+### Single-operator view
+
+- one operator may perform the same steps manually across both environments
+- still keep responsibilities separate:
+  - Windows side may submit
+  - leader side reconciles
+- the summary view is read-only convenience, not a shortcut around leader-only reconcile
 
 ## Spool layout
 

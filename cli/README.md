@@ -496,11 +496,13 @@ unity-mcp-cli handoff submit-windows-evidence ./MyGame --input-file windows-evid
 
 ### `handoff list-windows-evidence`
 
-Inspect the bounded Windows evidence spool without opening `.unity-mcp/handoff-spool/windows-evidence/` manually.
+Inspect the bounded Windows evidence spool without opening `.unity-mcp/handoff-spool/windows-evidence/` manually. The default view is raw spool history. Add `--summary` for a read-only derived operator view that stays spool-history scoped and does not create new canonical state.
 
 ```bash
 unity-mcp-cli handoff list-windows-evidence ./MyGame
 unity-mcp-cli handoff list-windows-evidence ./MyGame --handoff-id verification-handoff-1
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1
 ```
 
 ### `handoff reconcile-windows-evidence`
@@ -515,6 +517,8 @@ unity-mcp-cli handoff reconcile-windows-evidence ./MyGame --handoff-id verificat
 The Discord interaction endpoint must acknowledge `PING` requests and validate `X-Signature-Ed25519` plus `X-Signature-Timestamp` before consuming a button interaction. When an approval is accepted, the bridge writes a queued approval-intent spool record and then applies the decision through the leader-owned ledger. Dispatching the approved verification handoff then records GitHub dispatch provenance back into the same leader-owned ledger.
 
 The Windows lane stays bounded: Unity-MCP still does not own a generic task mailbox/runner. Instead, an external Windows runtime can emit bounded evidence JSON and hand it to `submit-windows-evidence`, while the leader later reconciles that evidence with `reconcile-windows-evidence`.
+
+Windows evidence remains append-only under `.unity-mcp/handoff-spool/windows-evidence/`. Operator-friendly representative status is a derived read-only view over spool history rather than a new authoritative ledger field. The `--summary` view is intentionally spool-history scoped, `submittedAt`-ordered, and non-authoritative: it helps humans see the latest pending/passed/failed/blocked signal without changing reconcile semantics.
 
 Artifact ownership remains split:
 

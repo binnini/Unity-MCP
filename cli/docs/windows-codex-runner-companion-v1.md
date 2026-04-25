@@ -20,7 +20,7 @@ The runner depends on these repo-owned contract docs; it does not replace or reo
 - the passive Windows handoff snapshot **contract** and examples in this repo
 - the leader-owned handoff ledger
 - bounded Windows evidence validation via `handoff submit-windows-evidence`
-- queued evidence visibility for operators via `handoff list-windows-evidence`
+- queued evidence visibility for operators via raw `handoff list-windows-evidence` output and the read-only `--summary` derived view
 - leader reconcile via `handoff reconcile-windows-evidence`
 
 ### External companion owns
@@ -134,6 +134,45 @@ The companion-local `logs/`, `outbox/`, `snapshots/`, and optional `sessions/` d
 - Stop after submit and report that leader reconcile is pending.
 - Do **not** call `handoff list-windows-evidence` as a runner polling loop.
 - Do **not** call `handoff reconcile-windows-evidence` from the Windows runner.
+
+## Operator inspection and runbook views
+
+### Append-only evidence policy
+
+- `.unity-mcp/handoff-spool/windows-evidence/` remains append-only spool history
+- multiple records for the same handoff/version may exist across retries or reruns
+- representative status for humans is derived from spool history rather than stored as new canonical state
+
+### Read-only summary view
+
+Operators may use:
+
+```bash
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary
+unity-mcp-cli handoff list-windows-evidence ./MyGame --summary --handoff-id verification-handoff-1
+```
+
+That summary is intentionally:
+- read-only
+- spool-history scoped
+- ordered by `submittedAt`
+- non-authoritative when compared with the leader-owned ledger
+
+If the matching handoff ledger record is missing or stale, the summary should still remain available and report that condition as a note rather than failing closed.
+
+### Split-lane runbook
+
+1. mac leader prepares or identifies the handoff and passive snapshot
+2. Windows runner executes bounded validation and submits evidence
+3. either operator can inspect raw spool history or the read-only summary
+4. mac leader reconciles when ready
+
+### Single-operator runbook
+
+One operator may perform the same split-lane steps across both environments, but must still preserve the boundary:
+- submit on the Windows side
+- reconcile on the leader side
+- treat `--summary` as visibility only, not as lifecycle authority
 
 ## Recommended bootstrap order
 
