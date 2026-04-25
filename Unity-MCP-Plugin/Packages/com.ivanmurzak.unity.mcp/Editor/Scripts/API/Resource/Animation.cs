@@ -149,7 +149,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             Description = "Get a read-only Animator review session projection by session id."
         )]
         public ResponseResourceContent[] ReviewSession(string uri, string sessionId)
-            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.ReviewSessionPayload(sessionId)));
+            => AnimationResourceShared.CreateJsonContent(uri, MainThread.Instance.Run(() => AnimationResourceShared.LoadReviewSessionPayload(sessionId)));
 
         public ResponseListResource[] AnimationReviewSessionsAll()
             => MainThread.Instance.Run(AnimationResourceShared.AnimationReviewSessionsAll);
@@ -379,7 +379,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             };
         }
 
-        public static ReviewSessionPayload ReviewSessionPayload(string encodedSessionId)
+        public static ReviewSessionPayload LoadReviewSessionPayload(string encodedSessionId)
         {
             var sessionId = Uri.UnescapeDataString(encodedSessionId ?? string.Empty);
             if (!TryResolveReviewSessionFilePath(sessionId, out var sessionFilePath, out var sessionPathError))
