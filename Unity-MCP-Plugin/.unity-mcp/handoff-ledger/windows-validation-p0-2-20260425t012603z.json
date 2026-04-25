@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "handoffId": "windows-validation-p0-2-20260425t012603z",
+  "recordVersion": 3,
+  "state": "draft",
+  "sourceLane": "mac-omx-leader",
+  "targetLane": "windows-codex",
+  "requestedAction": "Run bounded Windows validation smoke (windows_validation_smoke_v1) and submit a windows_lane_evidence_envelope for leader reconcile.",
+  "evidenceRefs": [
+    "log:file:///C:/unity-mcp-agent/logs/windows-validation-p0-2-20260425t012603z-20260425T013940Z-runner.log",
+    "note:file:///C:/unity-mcp-agent/outbox/windows-validation-p0-2-20260425t012603z-20260425T013940Z-summary.md",
+    "log:file:///C:/unity-mcp-agent/logs/windows-validation-p0-2-20260425t012603z-20260425T013748Z-runner.log",
+    "note:file:///C:/unity-mcp-agent/outbox/windows-validation-p0-2-20260425t012603z-20260425T013748Z-summary.md"
+  ],
+  "approverIdentity": null,
+  "approvalVersion": null,
+  "downstreamDispatchTarget": null,
+  "dispatchProvenance": null,
+  "createdAt": "2026-04-25T01:27:53.111Z",
+  "updatedAt": "2026-04-25T01:46:45.866Z",
+  "audit": [
+    {
+      "sequence": 1,
+      "actor": "mac-omx-leader",
+      "action": "created",
+      "toState": "draft",
+      "recordVersion": 1,
+      "createdAt": "2026-04-25T01:27:53.111Z"
+    },
+    {
+      "sequence": 2,
+      "actor": "mac-omx-leader",
+      "action": "evidence_applied",
+      "recordVersion": 2,
+      "createdAt": "2026-04-25T01:46:45.865Z",
+      "notes": "accepted evidence from windows:windows-runner-1 (windows-codex)"
+    },
+    {
+      "sequence": 3,
+      "actor": "mac-omx-leader",
+      "action": "evidence_applied",
+      "recordVersion": 3,
+      "createdAt": "2026-04-25T01:46:45.866Z",
+      "notes": "accepted evidence from windows:windows-runner-1 (windows-codex)"
+    }
+  ]
+}

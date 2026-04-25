@@ -9,8 +9,8 @@
   "summary": "Windows validation smoke completed.",
   "submittedAt": "2026-04-25T01:39:54.2133445+00:00",
   "storedAt": "2026-04-25T01:39:54.403Z",
-  "consumedAt": null,
-  "appliedRecordVersion": null,
+  "consumedAt": "2026-04-25T01:46:45.866Z",
+  "appliedRecordVersion": 2,
   "lastError": null,
   "envelope": {
     "schemaVersion": 1,
