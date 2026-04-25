@@ -7,7 +7,7 @@
     This script executes Unity tests directly using your local Unity installation,
     replicating what the GitHub Actions workflow does but without Docker or act.
 .PARAMETER TestMode
-    Which test mode to run: editmode, playmode, standalone, or all (default: all)
+    Which validation mode to run: compile, editmode, playmode, standalone, or all (default: all)
 .PARAMETER UnityPath
     Path to Unity.exe (required)
 .PARAMETER ProjectPath
@@ -15,14 +15,15 @@
 .PARAMETER OutputDir
     Directory for test results and logs (default: ./TestResults)
 .EXAMPLE
-    .\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe"
+    .\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe"
+    .\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode compile
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode all -Verbose
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet('editmode', 'playmode', 'standalone', 'all')]
+    [ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'all')]
     [string]$TestMode = "all",
     [Parameter(Mandatory = $true)]
     [string]$UnityPath,
@@ -157,6 +158,97 @@ function Invoke-UnityTest {
     }
 }
 
+function Invoke-UnityCompileCheck {
+    param(
+        [string]$UnityExe,
+        [string]$ProjectPath,
+        [string]$LogFile
+    )
+
+    Write-Section "Running Compile / Import Check"
+
+    $unityArgs = @(
+        "-batchmode",
+        "-quit",
+        "-projectPath", "`"$ProjectPath`"",
+        "-logFile", "`"$LogFile`"",
+        "-CI", "true",
+        "-GITHUB_ACTIONS", "true"
+    )
+
+    Write-Info "Project: $ProjectPath"
+    Write-Info "Log: $LogFile"
+    Write-Host ""
+
+    $startTime = Get-Date
+
+    $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $processInfo.FileName = $UnityExe
+    $processInfo.Arguments = $unityArgs -join " "
+    $processInfo.UseShellExecute = $false
+    $processInfo.RedirectStandardOutput = $true
+    $processInfo.RedirectStandardError = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $processInfo
+
+    $outputBuilder = New-Object System.Text.StringBuilder
+    $errorBuilder = New-Object System.Text.StringBuilder
+
+    $outputHandler = {
+        if ($EventArgs.Data) {
+            $line = $EventArgs.Data
+            [void]$Event.MessageData.AppendLine($line)
+            if ($script:VerboseOutput -eq 'Continue') {
+                Write-Host $line -ForegroundColor Gray
+            }
+        }
+    }
+
+    $errorHandler = {
+        if ($EventArgs.Data) {
+            $line = $EventArgs.Data
+            [void]$Event.MessageData.AppendLine($line)
+            Write-Host $line -ForegroundColor Red
+        }
+    }
+
+    $script:VerboseOutput = $VerbosePreference
+
+    Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -Action $outputHandler -MessageData $outputBuilder | Out-Null
+    Register-ObjectEvent -InputObject $process -EventName ErrorDataReceived -Action $errorHandler -MessageData $errorBuilder | Out-Null
+
+    [void]$process.Start()
+    $process.BeginOutputReadLine()
+    $process.BeginErrorReadLine()
+
+    Write-Host "Unity is importing / compiling the project..." -ForegroundColor Cyan
+    if ($VerbosePreference -ne 'Continue') {
+        Write-Host "(Use -Verbose flag to see real-time output)" -ForegroundColor Gray
+    }
+
+    $process.WaitForExit()
+
+    Get-EventSubscriber | Where-Object { $_.SourceObject -eq $process } | Unregister-Event
+
+    $endTime = Get-Date
+    $duration = $endTime - $startTime
+    $exitCode = $process.ExitCode
+
+    Write-Host ""
+    Write-Info "Duration: $($duration.ToString('mm\\:ss'))"
+    Write-Info "Exit Code: $exitCode"
+
+    return @{
+        ExitCode     = $exitCode
+        Duration     = $duration
+        TestPlatform = "Compile"
+        ResultsFile  = $null
+        LogFile      = $LogFile
+        ResultKind   = "compile"
+    }
+}
+
 function Parse-TestResults {
     param([string]$XmlPath)
 
@@ -250,7 +342,7 @@ if (-not (Test-Path $UnityPath)) {
     Write-Error-Message "Unity.exe not found at: $UnityPath"
     Write-Host ""
     Write-Host "Please provide a valid path to Unity.exe:" -ForegroundColor Yellow
-    Write-Host "  Example: -UnityPath `"C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe`"" -ForegroundColor Gray
+    Write-Host "  Example: -UnityPath `"C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe`"" -ForegroundColor Gray
     Pop-Location
     exit 1
 }
@@ -281,6 +373,7 @@ if ($TestMode -eq "all") {
 }
 else {
     $testModes = switch ($TestMode) {
+        "compile" { @("Compile") }
         "editmode" { @("EditMode") }
         "playmode" { @("PlayMode") }
         "standalone" { @("StandaloneWindows64") }
@@ -296,19 +389,30 @@ Write-Info "Test Modes: $($testModes -join ', ')"
 $results = @()
 
 foreach ($mode in $testModes) {
-    $resultsFile = Join-Path $OutputDir "TestResults-$mode.xml"
+    $resultsFile = $null
+    if ($mode -ne "Compile") {
+        $resultsFile = Join-Path $OutputDir "TestResults-$mode.xml"
+    }
     $logFile = Join-Path $logsDir "Unity-$mode.log"
 
     # Remove old results
-    if (Test-Path $resultsFile) { Remove-Item $resultsFile -Force }
+    if ($resultsFile -and (Test-Path $resultsFile)) { Remove-Item $resultsFile -Force }
     if (Test-Path $logFile) { Remove-Item $logFile -Force }
 
-    $result = Invoke-UnityTest `
-        -UnityExe $UnityPath `
-        -ProjectPath $ProjectPath `
-        -TestPlatform $mode `
-        -ResultsFile $resultsFile `
-        -LogFile $logFile
+    if ($mode -eq "Compile") {
+        $result = Invoke-UnityCompileCheck `
+            -UnityExe $UnityPath `
+            -ProjectPath $ProjectPath `
+            -LogFile $logFile
+    }
+    else {
+        $result = Invoke-UnityTest `
+            -UnityExe $UnityPath `
+            -ProjectPath $ProjectPath `
+            -TestPlatform $mode `
+            -ResultsFile $resultsFile `
+            -LogFile $logFile
+    }
 
     $results += $result
 }
@@ -332,7 +436,20 @@ foreach ($result in $results) {
     Write-Host ""
     Write-Host "--- $mode ---" -ForegroundColor Cyan
 
-    if ($exitCode -ne 0) {
+    if ($result.ResultKind -eq "compile") {
+        if ($exitCode -eq 0) {
+            Write-Host "Status: PASSED" -ForegroundColor Green
+            Write-Host "Project imported and compiled without batchmode failure." -ForegroundColor Green
+        }
+        else {
+            Write-Host "Status: FAILED (Exit Code: $exitCode)" -ForegroundColor Red
+            Write-Host "Compile / import check failed." -ForegroundColor Red
+            $overallSuccess = $false
+        }
+
+        Write-Host "Log file: $($result.LogFile)" -ForegroundColor Gray
+    }
+    elseif ($exitCode -ne 0) {
         Write-Host "Status: FAILED (Exit Code: $exitCode)" -ForegroundColor Red
         $overallSuccess = $false
 
@@ -372,7 +489,9 @@ foreach ($result in $results) {
     }
 
     Write-Host "Duration: $($result.Duration.ToString('mm\:ss'))" -ForegroundColor White
-    Write-Host "Results: $($result.ResultsFile)" -ForegroundColor Gray
+    if ($result.ResultsFile) {
+        Write-Host "Results: $($result.ResultsFile)" -ForegroundColor Gray
+    }
 }
 
 # ============================================================================

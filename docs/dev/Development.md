@@ -88,6 +88,8 @@ Before contributing, ensure the following tools are installed:
 | Docker *(optional)* | Latest | Build and test Docker images |
 
 > A free Unity Personal license works for contribution.
+>
+> **Default development baseline:** the root `Unity-MCP-Plugin/` project is now pinned to **Unity `6000.3.1f1`** for day-to-day development. This is intentionally separate from the package compatibility floor (`2022.3`) and the installer / release baseline (`2022.3.62f3`).
 
 ---
 
@@ -103,6 +105,7 @@ Before contributing, ensure the following tools are installed:
 
 2. **Open the Plugin in Unity**
    - Open Unity Hub → Add project → select the `Unity-MCP-Plugin/` folder
+   - For the exact maintainer baseline, open it with **Unity `6000.3.1f1`**
    - Unity will compile all assemblies automatically on first open
 
 3. **Open the Server in your IDE**
@@ -517,7 +520,14 @@ Provide position, rotation, and scale to minimize subsequent operations.")]
 
 # Running Tests
 
-Tests cover three modes across three Unity versions (2022, 2023, 6000) and two OSes (Windows, Ubuntu) — 18 combinations total.
+Locally, you can run Unity tests with the Test Runner GUI or the PowerShell helper script. In CI, the **active** Unity matrix currently covers:
+
+- 3 Unity versions: `2022.3.62f3`, `2023.2.22f1`, `6000.3.1f1`
+- 2 active test modes: `EditMode`, `Standalone`
+- 2 GameCI Docker platforms: `base`, `windows-mono`
+- GitHub-hosted runner: `ubuntu-latest`
+
+That means each active PR/release Unity workflow path currently runs **12 active Unity job instances**, not 18. PlayMode entries still exist in workflow files, but they are commented out and are **not** part of the active CI matrix.
 
 ## Running locally
 
@@ -529,14 +539,18 @@ Tests cover three modes across three Unity versions (2022, 2023, 6000) and two O
 
 **PowerShell script (command line)**
 ```powershell
+# Validate the default root project baseline (import / compile only)
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode compile
+
 # Run tests for a specific Unity version and mode
-.\commands\run-unity-tests.ps1 -unityVersion "6000.3.1f1" -testMode "editmode"
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.1f1\Editor\Unity.exe" -TestMode editmode
 ```
 
 ## Test modes
 
 | Mode | What it tests | Location |
 | ---- | ------------- | -------- |
+| **Compile** | Opens the project in batchmode and checks import / compile success without running the Unity Test Runner | Root project import / editor compile |
 | **EditMode** | Tool logic, serialization, editor utilities — no Play mode needed | `Packages/com.ivanmurzak.unity.mcp/Tests/Editor` |
 | **PlayMode** | Runtime plugin, SignalR connection, main thread dispatch | `Packages/com.ivanmurzak.unity.mcp/Tests/Runtime` |
 | **Standalone** | Full player build with embedded plugin | Requires a player build step |
@@ -562,10 +576,10 @@ See [Unity: Add tests to your package](https://docs.unity3d.com/Manual/cus-tests
 
 ## Interpreting CI results
 
-Each CI job is named `test-unity-{version}-{mode}` (e.g., `test-unity-6000-3-1f1-editmode`). When a job fails:
+Parent workflow jobs are named like `test-unity-{version}-{mode}` (for example `test-unity-6000-3-1f1-editmode`). Inside the reusable Unity workflow, the concrete runner job is named `{unityVersion} {testMode} on {platform}` (for example `6000.3.1f1 editmode on windows-mono`). When a job fails:
 1. Open the failing job in GitHub Actions
 2. Expand the **Unity Test Runner** step for inline output
-3. Download the **test-results** artifact for the full XML report
+3. Download the test artifact for the matching `{unityVersion} / {testMode} / {platform}` job
 4. Fix the test and push — CI reruns automatically
 
 ---
@@ -580,9 +594,11 @@ The project implements a comprehensive CI/CD pipeline using GitHub Actions with 
 
 Here is what you need to know when working with CI as a contributor:
 
-- **PRs from forks** require a maintainer to apply the `ci-ok` label before CI starts. This is a security measure to prevent untrusted code from accessing secrets.
-- **Do not modify workflow files** in `.github/workflows/` in your PR — the CI check will abort if it detects changes to these files from an untrusted contributor.
-- **All 18 test matrix combinations must pass** before a PR can be merged. If your change breaks only one combination (e.g., `2022-editmode`), that job will show a red ✗ while others are green.
+- `test_pull_request.yml` is the automatic PR validation workflow for `main` and `dev`.
+- `test_pull_request_manual.yml` is the manual / approved verification lane. It supports both `repository_dispatch` (`unity-mcp-approved-verification`) and direct `workflow_dispatch`.
+- Active Unity CI currently covers **EditMode + Standalone** across the three pinned compatibility lanes (`2022.3.62f3`, `2023.2.22f1`, `6000.3.1f1`).
+- The reusable Unity workflow runs on `ubuntu-latest` with GameCI Docker platforms `base` and `windows-mono`. **`windows-mono` is not native `windows-latest` coverage.**
+- PlayMode jobs are present in workflow files but are currently commented out, so they are not part of the active required matrix.
 - **Re-running failed jobs:** Go to the PR → **Checks** tab → click a failed job → **Re-run failed jobs**. This is useful for transient Unity Editor crashes.
 - **Workflow run order:** `test_pull_request.yml` runs on your PR. `release.yml` runs only after merging to `main`. You don't need to trigger releases manually.
 
@@ -602,9 +618,11 @@ Here is what you need to know when working with CI as a contributor:
 3. **Build MCP Server** - Compiles cross-platform executables (Windows, macOS, Linux) using [build-all.sh](../../Unity-MCP-Server/build-all.sh)
 4. **Unity Plugin Testing** - Runs comprehensive tests across:
    - 3 Unity versions: `2022.3.62f3`, `2023.2.22f1`, `6000.3.1f1`
-   - 3 test modes: `editmode`, `playmode`, `standalone`
-   - 2 operating systems: `windows-latest`, `ubuntu-latest`
-   - Total: **18 test matrix combinations**
+   - 2 active test modes: `editmode`, `standalone`
+   - 2 GameCI Docker platforms: `base`, `windows-mono`
+   - Runner host: `ubuntu-latest`
+   - Total active Unity jobs: **12** (`3 versions × 2 modes × 2 platforms`)
+   - Note: PlayMode entries are present in the workflow file but currently commented out
 5. **Release Creation** - Generates release notes from commits and creates GitHub release with tag
 6. **Publishing** - Uploads Unity installer package and MCP Server executables to the release
 7. **Discord Notification** - Sends formatted release notes to Discord channel
@@ -619,8 +637,28 @@ Here is what you need to know when working with CI as a contributor:
 **Process:**
 
 1. Builds MCP Server executables for all platforms
-2. Runs the same 18 Unity test matrix combinations as the release workflow
+2. Runs the active Unity validation matrix used by the release workflow:
+   - 3 Unity versions: `2022.3.62f3`, `2023.2.22f1`, `6000.3.1f1`
+   - 2 active test modes: `editmode`, `standalone`
+   - 2 GameCI Docker platforms: `base`, `windows-mono`
+   - Total active Unity jobs: **12**
 3. All tests must pass before PR can be merged
+
+### 🧰 [test_pull_request_manual.yml](../../.github/workflows/test_pull_request_manual.yml)
+
+**Trigger:** `repository_dispatch` (`unity-mcp-approved-verification`) or manual `workflow_dispatch`
+**Purpose:** Manual / approved verification lane used when an operator or external approval flow needs to trigger CI explicitly
+
+**Process:**
+
+1. Validates repository-dispatch approval context when invoked through the approval relay
+2. Runs CLI validation
+3. Runs the same active Unity matrix as the PR workflow:
+   - 3 Unity versions: `2022.3.62f3`, `2023.2.22f1`, `6000.3.1f1`
+   - 2 active test modes: `editmode`, `standalone`
+   - 2 GameCI Docker platforms: `base`, `windows-mono`
+   - Total active Unity jobs: **12**
+4. Keeps `workflow_dispatch` as an operator fallback when `repository_dispatch` is unavailable
 
 ### 🔧 [test_unity_plugin.yml](../../.github/workflows/test_unity_plugin.yml)
 
@@ -630,12 +668,12 @@ Here is what you need to know when working with CI as a contributor:
 **Features:**
 
 - Accepts parameters: `projectPath`, `unityVersion`, `testMode`
-- Runs on matrix of operating systems (Windows, Ubuntu)
+- Runs on `ubuntu-latest` with a GameCI platform matrix of `base` and `windows-mono`
 - Uses Game CI Unity Test Runner with custom Docker images
-- Implements security checks for PR contributors (requires `ci-ok` label for untrusted PRs)
-- Aborts if workflow files are modified in PRs
 - Caches Unity Library for faster subsequent runs
 - Uploads test artifacts for debugging
+
+`windows-mono` is a Unity Docker target platform, **not** a native Windows GitHub runner. Treat native Windows evidence as a separate verification lane.
 
 ### 📦 [deploy.yml](../../.github/workflows/deploy.yml)
 
@@ -682,8 +720,8 @@ Here is what you need to know when working with CI as a contributor:
 
 - Unity license, email, and password stored as GitHub secrets
 - NuGet API key and Docker credentials secured
-- PR workflow includes safety checks for workflow file modifications
-- Untrusted PR contributions require maintainer approval via `ci-ok` label
+- `test_pull_request_manual.yml` supports an explicit approval relay path through `repository_dispatch`
+- Any additional fork / workflow-file-change policy enforcement should be documented from the workflow that actually implements it
 
 ## Deployment Targets
 
