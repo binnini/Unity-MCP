@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createHandoffRecord, createLeaderWriter, readHandoffRecord, writeHandoffRecord } from '../src/utils/handoff-ledger.js';
+import { createHandoffRecord, createLeaderWriter, readHandoffRecord, transitionHandoffState, writeHandoffRecord } from '../src/utils/handoff-ledger.js';
 import { runCliAsync } from './helpers/cli.js';
 
 const tempDirs: string[] = [];
@@ -28,6 +28,8 @@ describe('handoff command surface', () => {
     expect(result.stdout).toContain('serve');
     expect(result.stdout).toContain('notify-discord');
     expect(result.stdout).toContain('publish-discord-status');
+    expect(result.stdout).toContain('transition');
+    expect(result.stdout).toContain('open-approval');
     expect(result.stdout).toContain('dispatch-approved');
     expect(result.stdout).toContain('submit-windows-evidence');
     expect(result.stdout).toContain('list-windows-evidence');
@@ -169,5 +171,81 @@ describe('handoff command surface', () => {
     const list = await runCliAsync(['handoff', 'list-windows-evidence', '--path', projectPath, '--summary', '--handoff-id', 'missing-handoff']);
     expect(list.exitCode).toBe(0);
     expect(list.stdout).toContain('No Windows evidence history found for handoff: missing-handoff');
+  });
+
+  it('transitions a leader-owned handoff through the CLI', async () => {
+    const projectPath = makeProject();
+    const writer = createLeaderWriter('mac-omx-leader');
+    writeHandoffRecord(projectPath, writer, createHandoffRecord({
+      handoffId: 'handoff-transition-1',
+      sourceLane: 'mac-omx-leader',
+      targetLane: 'windows-codex',
+      requestedAction: 'prepare approval gate',
+      createdBy: writer,
+    }));
+
+    const result = await runCliAsync([
+      'handoff',
+      'transition',
+      'handoff-transition-1',
+      '--path',
+      projectPath,
+      '--to',
+      'awaiting_approval',
+      '--leader-actor',
+      'mac-omx-leader',
+      '--notes',
+      'ready for review',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('transitioned to awaiting_approval');
+    expect(readHandoffRecord(projectPath, 'handoff-transition-1')).toMatchObject({
+      state: 'awaiting_approval',
+      recordVersion: 2,
+    });
+  });
+
+  it('opens a verification_to_cicd approval gate from an existing handoff', async () => {
+    const projectPath = makeProject();
+    const writer = createLeaderWriter('mac-omx-leader');
+    const draft = createHandoffRecord({
+      handoffId: 'verification-handoff-1',
+      sourceLane: 'windows-codex',
+      targetLane: 'mac-omx-leader',
+      requestedAction: 'Run Windows validation and reconcile bounded evidence.',
+      createdBy: writer,
+      evidenceRefs: ['note:file:///tmp/verification-summary.md'],
+    });
+    const source = transitionHandoffState(transitionHandoffState(draft, writer, 'awaiting_approval'), writer, 'reconcile_needed', {
+      notes: 'windows evidence applied',
+    });
+    writeHandoffRecord(projectPath, writer, source);
+
+    const result = await runCliAsync([
+      'handoff',
+      'open-approval',
+      'verification-gate-1',
+      '--path',
+      projectPath,
+      '--leader-actor',
+      'mac-omx-leader',
+      '--from-handoff',
+      'verification-handoff-1',
+      '--dispatch-target',
+      'owner/repo',
+      '--notes',
+      'promote verified work to CI/CD approval',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('opened in awaiting_approval');
+    expect(readHandoffRecord(projectPath, 'verification-gate-1')).toMatchObject({
+      state: 'awaiting_approval',
+      requestedAction: 'verification_to_cicd',
+      targetLane: 'github-actions',
+      downstreamDispatchTarget: 'owner/repo',
+      evidenceRefs: ['note:file:///tmp/verification-summary.md'],
+    });
   });
 });

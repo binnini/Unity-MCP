@@ -26,10 +26,12 @@ If the mac + OMX leader is unavailable, promotions freeze. In-flight lanes may f
 
 ## Current CLI bridge surface
 
-The repository now exposes seven bounded handoff commands:
+The repository now exposes nine bounded handoff commands:
 
 - `unity-mcp-cli handoff notify-discord <handoff-id> <project-path>`
 - `unity-mcp-cli handoff publish-discord-status <handoff-id> <project-path> --scope windows_validation_status`
+- `unity-mcp-cli handoff transition <handoff-id> <project-path> --to <state>`
+- `unity-mcp-cli handoff open-approval <handoff-id> <project-path> --from-handoff <source-handoff-id>`
 - `unity-mcp-cli handoff serve <project-path>`
 - `unity-mcp-cli handoff dispatch-approved <handoff-id> <project-path>`
 - `unity-mcp-cli handoff submit-windows-evidence <project-path>`
@@ -39,6 +41,10 @@ The repository now exposes seven bounded handoff commands:
 `notify-discord` reads a leader-owned handoff record that is already `awaiting_approval`, sends a Discord approval message with approve/reject buttons, and persists message metadata under `.unity-mcp/handoff-spool/discord-notifications/`.
 
 `publish-discord-status` is the bounded monitoring path. It renders a read-only Discord status card for the **current** handoff record plus the latest spool-derived Windows evidence summary, then stores the card metadata under `.unity-mcp/handoff-spool/discord-notifications/`. It does not add buttons, does not accept Discord-side refresh commands, and does not mutate lifecycle state.
+
+`transition` is the leader-owned lifecycle mutation entry point for existing handoffs. It reuses the canonical single-writer ledger transition rules instead of introducing a second state machine in the CLI surface.
+
+`open-approval` is the leader-owned promotion helper for creating a fresh approval gate in `awaiting_approval`. The default v1 path opens a `verification_to_cicd` handoff, can copy evidence refs from a previously verified/reconciled handoff, and gives `notify-discord` a canonical gate record to publish.
 
 `serve` exposes a local HTTP bridge for Discord interactions:
 
@@ -57,9 +63,13 @@ The bridge reads direct environment variables or an optional `--env-file` contai
 - `UNITY_MCP_HANDOFF_ALLOWED_APPROVER_IDS`
 - `UNITY_MCP_HANDOFF_LEADER_ACTOR`
 - `UNITY_MCP_HANDOFF_PORT`
+- `UNITY_MCP_HANDOFF_GITHUB_TOKEN`
+- `UNITY_MCP_HANDOFF_GITHUB_REPOSITORY`
+- `UNITY_MCP_HANDOFF_GITHUB_EVENT_TYPE` (optional)
+- `UNITY_MCP_HANDOFF_GITHUB_API_BASE_URL` (optional)
 
 
-`dispatch-approved` is the bounded GitHub relay path for v1. It requires an already `approved_not_dispatched` `verification_to_cicd` handoff, emits `repository_dispatch` with event type `unity-mcp-approved-verification` by default, and records GitHub dispatch provenance back into the leader-owned ledger as the handoff moves to `dispatched`.
+`dispatch-approved` is the bounded GitHub relay path for v1. It reads those GitHub values from direct env vars or the same `--env-file`. It requires an already `approved_not_dispatched` `verification_to_cicd` handoff, emits `repository_dispatch` with event type `unity-mcp-approved-verification` by default, and records GitHub dispatch provenance back into the leader-owned ledger as the handoff moves to `dispatched`.
 
 `submit-windows-evidence` is the bounded Windows lane intake path. It validates a `windows_lane_evidence_envelope` JSON payload and stores it under `.unity-mcp/handoff-spool/windows-evidence/` without mutating lifecycle state.
 

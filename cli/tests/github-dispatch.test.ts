@@ -71,4 +71,60 @@ describe('github handoff dispatch', () => {
       },
     });
   });
+
+  it('loads GitHub dispatch config from the handoff env file when process env is empty', async () => {
+    const projectPath = makeProject();
+    const writer = createLeaderWriter('mac-omx-leader');
+    const awaiting = transitionHandoffState(createHandoffRecord({
+      handoffId: 'handoff-env-file',
+      sourceLane: 'windows-codex',
+      targetLane: 'bot-ci-bridge',
+      requestedAction: 'verification_to_cicd',
+      createdBy: writer,
+    }), writer, 'awaiting_approval');
+    const approved = transitionHandoffState({
+      ...awaiting,
+      approverIdentity: 'approver-1',
+      approvalVersion: 1,
+    }, writer, 'approved_not_dispatched');
+    writeHandoffRecord(projectPath, writer, approved);
+
+    const envFilePath = path.join(projectPath, '.unity-mcp', 'handoff.env');
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, [
+      'UNITY_MCP_HANDOFF_GITHUB_TOKEN=token-from-file',
+      'UNITY_MCP_HANDOFF_GITHUB_REPOSITORY=owner/from-file',
+      'UNITY_MCP_HANDOFF_GITHUB_EVENT_TYPE=custom-event',
+      'UNITY_MCP_HANDOFF_GITHUB_API_BASE_URL=https://example.test/api/',
+    ].join('\n'));
+
+    const dispatch = await dispatchApprovedVerificationHandoff({
+      projectPath,
+      handoffId: 'handoff-env-file',
+      bridgeConfig: {
+        envFilePath,
+        handoffLeaderActor: 'mac-omx-leader',
+        handoffAllowedApproverIds: [],
+      },
+      env: {},
+      fetchImpl: async (url, init) => {
+        expect(String(url)).toBe('https://example.test/api/repos/owner/from-file/dispatches');
+        expect(init?.headers).toMatchObject({
+          Authorization: 'Bearer token-from-file',
+        });
+        const body = JSON.parse(String(init?.body));
+        expect(body.event_type).toBe('custom-event');
+        return new Response(null, { status: 204 });
+      },
+    });
+
+    expect(dispatch.eventType).toBe('custom-event');
+    expect(dispatch.target).toBe('owner/from-file');
+    expect(readHandoffRecord(projectPath, 'handoff-env-file')).toMatchObject({
+      state: 'dispatched',
+      dispatchProvenance: {
+        target: 'owner/from-file:custom-event',
+      },
+    });
+  });
 });

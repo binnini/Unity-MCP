@@ -474,6 +474,22 @@ Publish or refresh a read-only Discord monitoring card for the **current** hando
 unity-mcp-cli handoff publish-discord-status verification-handoff-1 ./MyGame --scope windows_validation_status --refresh-mode upsert --env-file .unity-mcp/handoff.env
 ```
 
+### `handoff transition`
+
+Move a leader-owned handoff record to another allowed lifecycle state using the existing single-writer ledger rules.
+
+```bash
+unity-mcp-cli handoff transition verification-handoff-1 ./MyGame --to awaiting_approval --leader-actor mac-omx-leader --notes "ready for chat approval"
+```
+
+### `handoff open-approval`
+
+Create a fresh leader-owned approval gate in `awaiting_approval`. By default this opens a `verification_to_cicd` gate and can seed evidence refs from an existing handoff.
+
+```bash
+unity-mcp-cli handoff open-approval verification-gate-1 ./MyGame --from-handoff verification-handoff-1 --dispatch-target owner/repo --env-file .unity-mcp/handoff.env
+```
+
 ### `handoff serve`
 
 Run the local HTTP bridge that exposes `/healthz` and `/discord/interactions` for a public tunnel or reverse proxy.
@@ -484,7 +500,7 @@ unity-mcp-cli handoff serve ./MyGame --env-file .unity-mcp/handoff.env --port 87
 
 ### `handoff dispatch-approved`
 
-Dispatch an already-approved `verification_to_cicd` handoff to GitHub Actions with `repository_dispatch`. Additional env vars:
+Dispatch an already-approved `verification_to_cicd` handoff to GitHub Actions with `repository_dispatch`. The command reads GitHub dispatch secrets from direct env vars or the same `--env-file`. Additional env vars:
 
 - `UNITY_MCP_HANDOFF_GITHUB_TOKEN`
 - `UNITY_MCP_HANDOFF_GITHUB_REPOSITORY` (falls back to `GITHUB_REPOSITORY`)

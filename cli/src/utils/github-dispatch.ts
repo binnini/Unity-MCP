@@ -1,10 +1,12 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   createLeaderWriter,
   readHandoffRecord,
   transitionHandoffState,
   writeHandoffRecord,
 } from './handoff-ledger.js';
-import type { HandoffBridgeConfig } from './discord-approval.js';
+import { parseEnvFileContents, type HandoffBridgeConfig } from './discord-approval.js';
 
 const DEFAULT_EVENT_TYPE = 'unity-mcp-approved-verification';
 
@@ -34,10 +36,21 @@ export function loadGitHubDispatchConfig(options: {
   bridgeConfig: HandoffBridgeConfig;
 }): GitHubDispatchConfig {
   const env = options.env ?? process.env;
-  const token = env['UNITY_MCP_HANDOFF_GITHUB_TOKEN'];
-  const repository = env['UNITY_MCP_HANDOFF_GITHUB_REPOSITORY'] ?? env['GITHUB_REPOSITORY'];
-  const eventType = env['UNITY_MCP_HANDOFF_GITHUB_EVENT_TYPE'] ?? DEFAULT_EVENT_TYPE;
-  const apiBaseUrl = env['UNITY_MCP_HANDOFF_GITHUB_API_BASE_URL'] ?? 'https://api.github.com';
+  const envFilePath = options.bridgeConfig.envFilePath
+    ? path.resolve(options.bridgeConfig.envFilePath)
+    : undefined;
+
+  let fileValues: Record<string, string> = {}
+  if (envFilePath && fs.existsSync(envFilePath)) {
+    fileValues = parseEnvFileContents(fs.readFileSync(envFilePath, 'utf-8'));
+  }
+
+  const readValue = (key: string): string | undefined => env[key] ?? fileValues[key];
+
+  const token = readValue('UNITY_MCP_HANDOFF_GITHUB_TOKEN');
+  const repository = readValue('UNITY_MCP_HANDOFF_GITHUB_REPOSITORY') ?? readValue('GITHUB_REPOSITORY');
+  const eventType = readValue('UNITY_MCP_HANDOFF_GITHUB_EVENT_TYPE') ?? DEFAULT_EVENT_TYPE;
+  const apiBaseUrl = readValue('UNITY_MCP_HANDOFF_GITHUB_API_BASE_URL') ?? 'https://api.github.com';
 
   if (!token?.trim()) {
     throw new GitHubDispatchError('Missing UNITY_MCP_HANDOFF_GITHUB_TOKEN for repository_dispatch.');
