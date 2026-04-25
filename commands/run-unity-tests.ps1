@@ -236,7 +236,7 @@ function Invoke-UnityCompileCheck {
     $exitCode = $process.ExitCode
 
     Write-Host ""
-    Write-Info "Duration: $($duration.ToString('mm\\:ss'))"
+    Write-Info "Duration: $($duration.ToString('mm\:ss'))"
     Write-Info "Exit Code: $exitCode"
 
     return @{
