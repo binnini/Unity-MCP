@@ -52,6 +52,23 @@ function Get-OptionalNestedString($Object, [string[]]$PathSegments) {
   return [string]$current
 }
 
+function Get-SanitizedSessionName([string]$Value) {
+  $sanitized = $Value.Trim().ToLowerInvariant()
+  $sanitized = [Regex]::Replace($sanitized, '[^a-z0-9_-]+', '-')
+  $sanitized = [Regex]::Replace($sanitized, '-+', '-')
+  $sanitized = $sanitized.Trim('-')
+
+  if ([string]::IsNullOrWhiteSpace($sanitized)) {
+    throw 'Session name must include at least one alphanumeric character.'
+  }
+
+  if ($sanitized.Length -gt 48) {
+    return $sanitized.Substring(0, 48)
+  }
+
+  return $sanitized
+}
+
 function Write-RunnerLog([string]$Message) {
   $timestamp = [DateTimeOffset]::UtcNow.ToString('o')
   $line = "[$timestamp] $Message"
@@ -206,7 +223,7 @@ $summary = 'Windows validation smoke completed.'
 
 $cliWorkingDirectory = Join-Path $WorkspacePath 'cli'
 $distEntry = Join-Path $cliWorkingDirectory 'dist\index.js'
-$sessionName = ($snapshot.handoffId -replace '[^A-Za-z0-9-]', '-') + '-windows-validation-smoke'
+$sessionName = Get-SanitizedSessionName "$($snapshot.handoffId)-windows-validation-smoke"
 $teamStatePath = Join-Path $ProjectPath ".unity-mcp\team-state\$sessionName.json"
 $killedRuntimeHandle = ''
 
