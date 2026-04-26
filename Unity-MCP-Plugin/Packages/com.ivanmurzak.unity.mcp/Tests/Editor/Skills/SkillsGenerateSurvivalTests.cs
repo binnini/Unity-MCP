@@ -84,9 +84,8 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Tests
 
             var originalSkillsPath = UnityMcpPluginEditor.SkillsPath;
 
-            RunTool(Tool_Skills.SkillsGenerateToolId, $@"{{
-                ""path"": ""{RelativeSkillsPath.Replace("\\", "/")}""
-            }}");
+            var skillsTool = new Tool_Skills();
+            skillsTool.GenerateAll(RelativeSkillsPath.Replace("\\", "/"));
 
             Assert.AreEqual(originalSkillsPath, UnityMcpPluginEditor.SkillsPath,
                 "unity-skill-generate should restore UnityMcpPluginEditor.SkillsPath after generation");
