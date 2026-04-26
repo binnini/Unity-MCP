@@ -571,6 +571,17 @@ That means each active PR/release Unity workflow path currently runs **12 active
 
 Use `-TestMode survival` when you specifically want to prove the CLI-owned artifact preservation claim without depending on the XML result path.
 
+### System tool exposure contract
+
+The local Unity test harnesses under `BaseTest` call tools through `UnityMcpPluginEditor.Instance.Tools.RunCallTool(...)`. In the currently observed lanes, that ToolManager catalog does **not** expose `unity-skill-generate`, even though `Tool_Skills.GenerateAll` still exists as a system-tool declaration.
+
+That distinction matters:
+
+- generator-seam survival verification should call the generator body directly
+- system-tool registration / discovery behavior should be validated in its own lane
+
+Do not couple those two concerns in the same regression unless you intend to broaden the slice.
+
 ## Including package tests (testables)
 
 In projects that use multiple UPM packages, you can control which packages’ tests appear in the Test Runner via the [project manifest](https://docs.unity3d.com/Manual/upm-manifestPrj.html) **`testables`** field. Only packages listed in `testables` have their tests compiled and shown. Add this package (or any other) to `testables` in your project manifest to include its tests.
