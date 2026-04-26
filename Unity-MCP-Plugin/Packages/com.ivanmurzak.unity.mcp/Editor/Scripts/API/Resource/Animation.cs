@@ -184,7 +184,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             => FindAssetPaths("t:AnimatorController")
                 .Select(path => new ResponseListResource(
                     uri: $"animation://controller/{Uri.EscapeDataString(path)}",
-                    name: System.IO.Path.GetFileNameWithoutExtension(path),
+                    name: Path.GetFileNameWithoutExtension(path),
                     enabled: true,
                     mimeType: Consts.MimeType.TextJson))
                 .ToArray();
@@ -198,7 +198,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
             => FindAssetPaths("t:AnimationClip")
                 .Select(path => new ResponseListResource(
                     uri: $"animation://clip/{Uri.EscapeDataString(path)}",
-                    name: System.IO.Path.GetFileNameWithoutExtension(path),
+                    name: Path.GetFileNameWithoutExtension(path),
                     enabled: true,
                     mimeType: Consts.MimeType.TextJson))
                 .ToArray();
@@ -676,7 +676,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                 return new ControllerListItem
                 {
                     Path = path,
-                    Name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    Name = Path.GetFileNameWithoutExtension(path),
                     LayerCount = 0,
                     ParameterCount = 0,
                     StateCount = 0,
@@ -829,7 +829,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                 return new ClipListItem
                 {
                     Path = path,
-                    Name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    Name = Path.GetFileNameWithoutExtension(path),
                     Length = 0f,
                     FrameRate = 0f,
                     WrapMode = string.Empty,
@@ -853,17 +853,20 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
         }
 
         static ClipDetailItem SummarizeClipDetail(string path, AnimationClip clip)
-            => new()
+        {
+            var clipEvents = AnimationUtility.GetAnimationEvents(clip);
+
+            return new ClipDetailItem
             {
                 Path = path,
                 Name = clip.name,
                 Length = clip.length,
                 FrameRate = clip.frameRate,
                 WrapMode = clip.wrapMode.ToString(),
-                EventCount = AnimationUtility.GetAnimationEvents(clip).Length,
+                EventCount = clipEvents.Length,
                 Legacy = clip.legacy,
                 HumanMotion = clip.humanMotion,
-                Events = AnimationUtility.GetAnimationEvents(clip)
+                Events = clipEvents
                     .OrderBy(evt => evt.time)
                     .ThenBy(evt => evt.functionName, StringComparer.Ordinal)
                     .Select(evt => new ClipEventItem
@@ -886,6 +889,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.API
                     .Select(ToBindingItem)
                     .ToArray()
             };
+        }
 
         static CurveBindingItem ToBindingItem(EditorCurveBinding binding)
             => new()

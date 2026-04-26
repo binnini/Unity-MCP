@@ -136,7 +136,7 @@ Before contributing, ensure the following tools are installed:
 
 # Contribute
 
-Lets build the bright game development future together, contribute to the project. Use this document to understand the project structure and how exactly it works.
+Let's build the bright game development future together and contribute to the project. Use this document to understand the project structure and how it works.
 
 1. [Fork the project](https://github.com/IvanMurzak/Unity-MCP/fork)
 2. Make your improvements, follow code style
@@ -550,6 +550,9 @@ That means each active PR/release Unity workflow path currently runs **12 active
 
 # Run the generator-seam survival verification through the executeMethod batch lane
 .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode survival
+
+# Run the ToolManager/system-tool exposure verification through the executeMethod batch lane
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode systemtool
 ```
 
 ## Test modes
@@ -561,6 +564,7 @@ That means each active PR/release Unity workflow path currently runs **12 active
 | **PlayMode** | Runtime plugin, SignalR connection, main thread dispatch | `Packages/com.ivanmurzak.unity.mcp/Tests/Runtime` |
 | **Standalone** | Full player build with embedded plugin | Requires a player build step |
 | **Survival** | Executes the focused generator-seam regression through `executeMethod` + `TestRunnerApi` when `-runTests` XML output is unreliable | `SkillsGenerateSurvivalBatchRunner.Run` |
+| **SystemTool** | Executes the focused ToolManager/system-tool exposure regression through `executeMethod` + `TestRunnerApi` | `SystemToolExposureBatchRunner.Run` |
 
 ### Survival verification lane
 
@@ -570,6 +574,7 @@ That means each active PR/release Unity workflow path currently runs **12 active
 - `-executeMethod com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalBatchRunner.Run` — fallback lane for environments where the focused test is observable but Unity does not write the expected XML result file
 
 Use `-TestMode survival` when you specifically want to prove the CLI-owned artifact preservation claim without depending on the XML result path.
+Use `-TestMode systemtool` when you specifically want to pin the current ToolManager/system-tool exposure contract without depending on a broader EditMode sweep.
 
 ### System tool exposure contract
 

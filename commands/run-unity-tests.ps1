@@ -7,7 +7,7 @@
     This script executes Unity tests directly using your local Unity installation,
     replicating what the GitHub Actions workflow does but without Docker or act.
 .PARAMETER TestMode
-    Which validation mode to run: compile, editmode, playmode, standalone, survival, or all (default: all)
+    Which validation mode to run: compile, editmode, playmode, standalone, survival, systemtool, or all (default: all)
 .PARAMETER UnityPath
     Path to Unity.exe (required)
 .PARAMETER ProjectPath
@@ -22,12 +22,13 @@
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode -TestFilter "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalTests"
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode survival
+    .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode systemtool
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode all -Verbose
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'survival', 'all')]
+    [ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'survival', 'systemtool', 'all')]
     [string]$TestMode = "all",
     [Parameter(Mandatory = $true)]
     [string]$UnityPath,
@@ -485,6 +486,7 @@ else {
         "playmode" { @("PlayMode") }
         "standalone" { @("StandaloneWindows64") }
         "survival" { @("Survival") }
+        "systemtool" { @("SystemToolExposure") }
     }
 }
 
@@ -522,6 +524,14 @@ foreach ($mode in $testModes) {
             -ProjectPath $ProjectPath `
             -MethodName "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalBatchRunner.Run" `
             -Label "Survival" `
+            -LogFile $logFile
+    }
+    elseif ($mode -eq "SystemToolExposure") {
+        $result = Invoke-UnityExecuteMethodCheck `
+            -UnityExe $UnityPath `
+            -ProjectPath $ProjectPath `
+            -MethodName "com.IvanMurzak.Unity.MCP.Editor.Tests.SystemToolExposureBatchRunner.Run" `
+            -Label "System Tool Exposure" `
             -LogFile $logFile
     }
     else {

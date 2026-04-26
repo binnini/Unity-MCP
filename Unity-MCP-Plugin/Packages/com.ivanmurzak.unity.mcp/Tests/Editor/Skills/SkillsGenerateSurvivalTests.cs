@@ -25,7 +25,6 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Tests
         const string ArtifactRelativePath = "unity-mcp-specialists-v2/SKILL.md";
         const string OwnershipMarker = "<!-- GENERATED: unity-mcp-cli setup-skills specialists-v2 orchestration; CLI-owned temporary artifact; do not hand-edit. -->";
 
-        bool? _originalToolEnabled;
         string? _originalSkillsPath;
 
         string TempSkillsRootAbsolutePath => Path.Combine(
@@ -43,31 +42,17 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Tests
 
             CleanupTempTree();
 
-            var toolManager = UnityMcpPluginEditor.Instance.Tools;
-            Assert.IsNotNull(toolManager, "ToolManager should not be null");
-
-            _originalToolEnabled = toolManager!.IsToolEnabled(Tool_Skills.SkillsGenerateToolId);
             _originalSkillsPath = UnityMcpPluginEditor.SkillsPath;
-
-            toolManager.SetToolEnabled(Tool_Skills.SkillsGenerateToolId, true);
-            UnityMcpPluginEditor.Instance.Save();
         }
 
         [UnityTearDown]
         public override IEnumerator TearDown()
         {
-            var toolManager = UnityMcpPluginEditor.Instance.Tools;
-            if (toolManager != null && _originalToolEnabled.HasValue)
-            {
-                toolManager.SetToolEnabled(Tool_Skills.SkillsGenerateToolId, _originalToolEnabled.Value);
-            }
-
             if (_originalSkillsPath != null)
             {
                 UnityMcpPluginEditor.SkillsPath = _originalSkillsPath;
             }
 
-            UnityMcpPluginEditor.Instance.Save();
             CleanupTempTree();
 
             yield return base.TearDown();
