@@ -18,7 +18,7 @@ describe('run-unity-tests PowerShell helper', () => {
   it('exposes compile mode as a first-class validation path', () => {
     const script = fs.readFileSync(scriptPath, 'utf-8');
 
-    expect(script).toContain("[ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'all')]");
+    expect(script).toContain("[ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'survival', 'all')]");
     expect(script).toContain('"compile" { @("Compile") }');
     expect(script).toContain('ResultKind   = "compile"');
   });
@@ -29,5 +29,14 @@ describe('run-unity-tests PowerShell helper', () => {
     expect(script).toContain('[string]$TestFilter');
     expect(script).toContain('@("-testFilter", "`"$TestFilter`"")');
     expect(script).toContain('-TestFilter $TestFilter');
+  });
+
+  it('exposes the survival executeMethod lane for environments where -runTests XML is unreliable', () => {
+    const script = fs.readFileSync(scriptPath, 'utf-8');
+
+    expect(script).toContain('"survival" { @("Survival") }');
+    expect(script).toContain('Invoke-UnityExecuteMethodCheck');
+    expect(script).toContain('com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalBatchRunner.Run');
+    expect(script).toContain('ResultKind   = "executeMethod"');
   });
 });

@@ -7,7 +7,7 @@
     This script executes Unity tests directly using your local Unity installation,
     replicating what the GitHub Actions workflow does but without Docker or act.
 .PARAMETER TestMode
-    Which validation mode to run: compile, editmode, playmode, standalone, or all (default: all)
+    Which validation mode to run: compile, editmode, playmode, standalone, survival, or all (default: all)
 .PARAMETER UnityPath
     Path to Unity.exe (required)
 .PARAMETER ProjectPath
@@ -21,12 +21,13 @@
     .\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode compile
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode editmode -TestFilter "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalTests"
+    .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode survival
     .\run-unity-tests.ps1 -UnityPath "C:\Unity\Editor\Unity.exe" -TestMode all -Verbose
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'all')]
+    [ValidateSet('compile', 'editmode', 'playmode', 'standalone', 'survival', 'all')]
     [string]$TestMode = "all",
     [Parameter(Mandatory = $true)]
     [string]$UnityPath,
@@ -261,6 +262,100 @@ function Invoke-UnityCompileCheck {
     }
 }
 
+function Invoke-UnityExecuteMethodCheck {
+    param(
+        [string]$UnityExe,
+        [string]$ProjectPath,
+        [string]$MethodName,
+        [string]$Label,
+        [string]$LogFile
+    )
+
+    Write-Section "Running $Label"
+
+    $unityArgs = @(
+        "-batchmode",
+        "-projectPath", "`"$ProjectPath`"",
+        "-executeMethod", $MethodName,
+        "-logFile", "`"$LogFile`"",
+        "-CI", "true",
+        "-GITHUB_ACTIONS", "true"
+    )
+
+    Write-Info "ExecuteMethod: $MethodName"
+    Write-Info "Log: $LogFile"
+    Write-Host ""
+
+    $startTime = Get-Date
+
+    $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $processInfo.FileName = $UnityExe
+    $processInfo.Arguments = $unityArgs -join " "
+    $processInfo.UseShellExecute = $false
+    $processInfo.RedirectStandardOutput = $true
+    $processInfo.RedirectStandardError = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $processInfo
+
+    $outputBuilder = New-Object System.Text.StringBuilder
+    $errorBuilder = New-Object System.Text.StringBuilder
+
+    $outputHandler = {
+        if ($EventArgs.Data) {
+            $line = $EventArgs.Data
+            [void]$Event.MessageData.AppendLine($line)
+            if ($script:VerboseOutput -eq 'Continue') {
+                Write-Host $line -ForegroundColor Gray
+            }
+        }
+    }
+
+    $errorHandler = {
+        if ($EventArgs.Data) {
+            $line = $EventArgs.Data
+            [void]$Event.MessageData.AppendLine($line)
+            Write-Host $line -ForegroundColor Red
+        }
+    }
+
+    $script:VerboseOutput = $VerbosePreference
+
+    Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -Action $outputHandler -MessageData $outputBuilder | Out-Null
+    Register-ObjectEvent -InputObject $process -EventName ErrorDataReceived -Action $errorHandler -MessageData $errorBuilder | Out-Null
+
+    [void]$process.Start()
+    $process.BeginOutputReadLine()
+    $process.BeginErrorReadLine()
+
+    Write-Host "Unity is running executeMethod verification..." -ForegroundColor Cyan
+    if ($VerbosePreference -ne 'Continue') {
+        Write-Host "(Use -Verbose flag to see real-time output)" -ForegroundColor Gray
+    }
+
+    $process.WaitForExit()
+
+    Get-EventSubscriber | Where-Object { $_.SourceObject -eq $process } | Unregister-Event
+
+    $endTime = Get-Date
+    $duration = $endTime - $startTime
+    $exitCode = $process.ExitCode
+
+    Write-Host ""
+    Write-Info "Duration: $($duration.ToString('mm\:ss'))"
+    Write-Info "Exit Code: $exitCode"
+
+    return @{
+        ExitCode     = $exitCode
+        Duration     = $duration
+        TestPlatform = $Label
+        ResultsFile  = $null
+        LogFile      = $LogFile
+        ResultKind   = "executeMethod"
+        MethodName   = $MethodName
+    }
+}
+
 function Parse-TestResults {
     param([string]$XmlPath)
 
@@ -389,6 +484,7 @@ else {
         "editmode" { @("EditMode") }
         "playmode" { @("PlayMode") }
         "standalone" { @("StandaloneWindows64") }
+        "survival" { @("Survival") }
     }
 }
 
@@ -418,6 +514,14 @@ foreach ($mode in $testModes) {
         $result = Invoke-UnityCompileCheck `
             -UnityExe $UnityPath `
             -ProjectPath $ProjectPath `
+            -LogFile $logFile
+    }
+    elseif ($mode -eq "Survival") {
+        $result = Invoke-UnityExecuteMethodCheck `
+            -UnityExe $UnityPath `
+            -ProjectPath $ProjectPath `
+            -MethodName "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalBatchRunner.Run" `
+            -Label "Survival" `
             -LogFile $logFile
     }
     else {
@@ -463,6 +567,20 @@ foreach ($result in $results) {
             $overallSuccess = $false
         }
 
+        Write-Host "Log file: $($result.LogFile)" -ForegroundColor Gray
+    }
+    elseif ($result.ResultKind -eq "executeMethod") {
+        if ($exitCode -eq 0) {
+            Write-Host "Status: PASSED" -ForegroundColor Green
+            Write-Host "ExecuteMethod verification completed without observed failures." -ForegroundColor Green
+        }
+        else {
+            Write-Host "Status: FAILED (Exit Code: $exitCode)" -ForegroundColor Red
+            Write-Host "ExecuteMethod verification failed." -ForegroundColor Red
+            $overallSuccess = $false
+        }
+
+        Write-Host "Method: $($result.MethodName)" -ForegroundColor Gray
         Write-Host "Log file: $($result.LogFile)" -ForegroundColor Gray
     }
     elseif ($exitCode -ne 0) {

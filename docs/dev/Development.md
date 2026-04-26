@@ -547,6 +547,9 @@ That means each active PR/release Unity workflow path currently runs **12 active
 
 # Run one focused EditMode test by fully-qualified test name / fixture filter
 .\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode editmode -TestFilter "com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalTests"
+
+# Run the generator-seam survival verification through the executeMethod batch lane
+.\commands\run-unity-tests.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.6f1\Editor\Unity.exe" -TestMode survival
 ```
 
 ## Test modes
@@ -557,6 +560,16 @@ That means each active PR/release Unity workflow path currently runs **12 active
 | **EditMode** | Tool logic, serialization, editor utilities — no Play mode needed | `Packages/com.ivanmurzak.unity.mcp/Tests/Editor` |
 | **PlayMode** | Runtime plugin, SignalR connection, main thread dispatch | `Packages/com.ivanmurzak.unity.mcp/Tests/Runtime` |
 | **Standalone** | Full player build with embedded plugin | Requires a player build step |
+| **Survival** | Executes the focused generator-seam regression through `executeMethod` + `TestRunnerApi` when `-runTests` XML output is unreliable | `SkillsGenerateSurvivalBatchRunner.Run` |
+
+### Survival verification lane
+
+`SkillsGenerateSurvivalTests` currently has two different local execution seams:
+
+- `-runTests` / `-testFilter` — useful when Unity emits XML results normally
+- `-executeMethod com.IvanMurzak.Unity.MCP.Editor.Tests.SkillsGenerateSurvivalBatchRunner.Run` — fallback lane for environments where the focused test is observable but Unity does not write the expected XML result file
+
+Use `-TestMode survival` when you specifically want to prove the CLI-owned artifact preservation claim without depending on the XML result path.
 
 ## Including package tests (testables)
 
